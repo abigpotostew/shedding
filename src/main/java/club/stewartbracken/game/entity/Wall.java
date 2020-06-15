@@ -1,13 +1,19 @@
-package club.stewartbracken.game;
+package club.stewartbracken.game.entity;
 
+import club.stewartbracken.game.context.Context;
+import club.stewartbracken.game.Entity;
+import club.stewartbracken.game.Physics;
 import processing.core.PVector;
 
-public class Other implements Entity {
+public class Wall
+    implements Entity {
 //    PVector pos;
 
     private final Physics physics;
     private static final int SPEED = 800;//px/s
-    public Other(PVector pos) {
+    final String id;
+    public Wall(PVector pos) {
+        this.id=IdUtils.newId();
 //        this.pos = pos;
         this.physics=new Physics(pos);
     }
@@ -20,8 +26,10 @@ public class Other implements Entity {
 
     @Override
     public void draw(Context ctx) {
-        ctx.app().fill(200,0,0);
-        ctx.app().ellipse(this.physics.getPos().x, this.physics.getPos().y, 20,20 );
+        ctx.app().rectMode(ctx.app().CENTER);
+        ctx.app().fill(200,60,150);
+        ctx.app().stroke(30);
+        ctx.app().rect(this.physics.getPos().x, this.physics.getPos().y, 40,40 );
     }
 
     @Override
@@ -32,5 +40,10 @@ public class Other implements Entity {
     @Override
     public void update(Context ctx) {
 
+    }
+
+    @Override
+    public String getId() {
+        return this.id;
     }
 }

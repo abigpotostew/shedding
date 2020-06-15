@@ -1,4 +1,4 @@
-package club.stewartbracken.game;
+package club.stewartbracken.game.context;
 
 import processing.core.PApplet;
 
