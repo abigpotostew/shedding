@@ -4,16 +4,13 @@ import club.stewartbracken.Debug;
 import club.stewartbracken.game.context.Context;
 import club.stewartbracken.game.context.Factory;
 import club.stewartbracken.game.context.GameContext;
-import club.stewartbracken.game.entity.Grid;
-import club.stewartbracken.game.entity.Other;
-import club.stewartbracken.game.entity.Pickup;
-import club.stewartbracken.game.entity.Player;
-import club.stewartbracken.game.entity.Wall;
+import club.stewartbracken.game.entities.EFactory;
+import club.stewartbracken.game.entities.Grid;
+import club.stewartbracken.game.entity.Entity;
 import processing.core.PApplet;
 import processing.core.PVector;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class Game {
@@ -25,11 +22,11 @@ public class Game {
 
     private final PApplet applet;
 
-    Player player;
-    Other other;
+    Entity player;
+    Entity other;
     Grid grid;
-    List<Wall> walls;
-    List<Pickup> pickups;
+    List<Entity> walls;
+    List<Entity> pickups;
 
     final String pickupStyleCollide = "COLLIDE";
     final String pickupStyleNeighbor = "NEIGHBOR";
@@ -44,8 +41,8 @@ public class Game {
 
     public Game(final PApplet applet) {
         this.applet = applet;
-        this.player = new Player(new PVector(this.applet.width / 2 - 100, this.applet.height / 2, 0));
-        this.other = new Other(new PVector(this.applet.width / 2 + 100, this.applet.height / 2, 0));
+        this.player = EFactory.createPlayer(new PVector(this.applet.width / 2 - 100, this.applet.height / 2, 0));
+        this.other = EFactory.createOther(new PVector(this.applet.width / 2 + 100, this.applet.height / 2, 0));
         this.grid = new Grid(this.cellCount, applet);
         this.grid.setEntity(5, 7, this.player);
         this.grid.setEntity(9, 7, this.other);
@@ -99,8 +96,8 @@ public class Game {
                     final Entity playerCollide = this.grid.collidingEntity((int) dir.x, (int) dir.y, this.player);
                     final Entity otherCollide = this.grid.collidingEntity((int) mirroredDir.x, (int) mirroredDir.y,
                         this.player);
-                    if (playerCollide == otherCollide && playerCollide instanceof Pickup) {
-                        Debug.log("IT'S A WALLS");
+                    if (playerCollide == otherCollide && playerCollide.getId().startsWith("PICKUP")) {
+                        Debug.log("IT'S A PICKUP");
                     }
                 }
 
@@ -122,7 +119,7 @@ public class Game {
         }
         for (final Entity pn : pNeighbors) {
             if (oNeighbors.contains(pn)) {
-                if (pn instanceof Pickup) {
+                if (pn.getId().startsWith("PICKUP")) {
                     this.grid.removeEntity(pn);
                     this.pickups.remove(pn);
 
@@ -134,14 +131,18 @@ public class Game {
 
     public void draw(final Context ctx) {
 
-        this.grid.draw(ctx);
-        this.player.draw(ctx);
-        this.other.draw(ctx);
-        for (final Wall w : this.walls) {
-            w.draw(ctx);
+//        this.grid.draw(ctx);
+        drawEntity(ctx, this.grid);
+        drawEntity(ctx, this.player);
+        drawEntity(ctx, this.other);
+//        this.player.getSprite().draw(ctx);
+//        this.other.getSprite().draw(ctx);
+        for (final Entity w : this.walls) {
+//            w.draw(ctx);
+            drawEntity(ctx, w);
         }
-        for (final Pickup w : this.pickups) {
-            w.draw(ctx);
+        for (final Entity w : this.pickups) {
+            drawEntity(ctx, w);
         }
 
         ap().fill(255);
@@ -152,6 +153,9 @@ public class Game {
         // debug stuff on top
 
         ap().text(String.format("%.4f", ctx.dt()), 10, 10);
+    }
+    private void drawEntity(final Context ctx, final Entity e){
+        e.getSprite().draw(ctx, e.getPhysics());
     }
 
     public PApplet ap() {

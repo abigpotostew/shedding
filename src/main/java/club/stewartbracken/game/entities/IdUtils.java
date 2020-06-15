@@ -1,4 +1,4 @@
-package club.stewartbracken.game.entity;
+package club.stewartbracken.game.entities;
 
 import java.util.UUID;
 

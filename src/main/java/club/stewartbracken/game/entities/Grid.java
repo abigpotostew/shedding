@@ -1,8 +1,9 @@
-package club.stewartbracken.game.entity;
+package club.stewartbracken.game.entities;
 
+import club.stewartbracken.game.components.Sprite;
 import club.stewartbracken.game.context.Context;
-import club.stewartbracken.game.Entity;
-import club.stewartbracken.game.Physics;
+import club.stewartbracken.game.entity.Entity;
+import club.stewartbracken.game.components.Physics;
 import processing.core.PApplet;
 import processing.core.PVector;
 
@@ -35,27 +36,16 @@ public class Grid
         return null;
     }
 
-    @Override
-    public void update(final Context ctx) {
-
-    }
-
-    @Override
-    public void draw(final Context ctx) {
-
-        for (int y = 0; y < this.grid.length; ++y) {
-            for (int x = 0; x < this.grid[y].length; ++x) {
-                ctx.app().rectMode(ctx.app().CENTER);
-                ctx.app().stroke(200, 150, 0);
-                //                ctx.app().fill(0);
-                ctx.app().noFill();
-                final float drawx = x * this.cellSize+cellSize/2;
-                final float drawy = y * this.cellSize+cellSize/2;
-                ctx.app().rect(drawx, drawy, this.cellSize, this.cellSize);
-                ctx.app().ellipse(worldPos(x, y).x, worldPos(x, y).y, 2, 2);
-            }
-        }
-    }
+//    @Override
+//    public void update(final Context ctx) {
+//
+//    }
+//
+//    @Override
+//    public void draw(final Context ctx) {
+//
+//
+//    }
 
     public void setEntity(final int x, final int y, final Entity e) {
         removeEntity(e);
@@ -154,12 +144,12 @@ public class Grid
         }
     }
 
-    public List<Wall> initWalls(final PApplet app) {
-        final List<Wall> walls = new ArrayList<>();
+    public List<Entity> initWalls(final PApplet app) {
+        final List<Entity> walls = new ArrayList<>();
         for (int y = 0; y < this.grid.length; ++y) {
             for (int x = 0; x < this.grid[y].length; ++x) {
                 if (app.random(1) > .9 && grid[y][x]==null) {
-                    final Wall wall = new Wall(new PVector());
+                    final Entity wall = EFactory.createWall(new PVector());
                     walls.add(wall);
                     setEntity(x, y, wall);
                 }
@@ -168,11 +158,11 @@ public class Grid
         return walls;
     }
 
-    public List<Pickup> addPickups(final Context ctx, final int count) {
-        final List<Pickup> pickups = new ArrayList<>();
+    public List<Entity> addPickups(final Context ctx, final int count) {
+        final List<Entity> pickups = new ArrayList<>();
 
         for(int i=0;i<count;++i){
-            final Pickup pickup = new Pickup(new PVector());
+            final Entity pickup = EFactory.createPickup(new PVector());
 //            final int x = (int) ctx.app().random(this.cellCount);
 //            final int y = (int) ctx.app().random(this.cellCount);
 //            setEntity(x, y, pickup);
@@ -205,5 +195,23 @@ public class Grid
     @Override
     public String getId() {
         return "GRID"+id;
+    }
+
+    @Override
+    public Sprite getSprite() {
+        return ((ctx, phys) -> {
+            for (int y = 0; y < this.grid.length; ++y) {
+                for (int x = 0; x < this.grid[y].length; ++x) {
+                    ctx.app().rectMode(ctx.app().CENTER);
+                    ctx.app().stroke(200, 150, 0);
+                    //                ctx.app().fill(0);
+                    ctx.app().noFill();
+                    final float drawx = x * this.cellSize+cellSize/2;
+                    final float drawy = y * this.cellSize+cellSize/2;
+                    ctx.app().rect(drawx, drawy, this.cellSize, this.cellSize);
+                    ctx.app().ellipse(worldPos(x, y).x, worldPos(x, y).y, 2, 2);
+                }
+            }
+        });
     }
 }

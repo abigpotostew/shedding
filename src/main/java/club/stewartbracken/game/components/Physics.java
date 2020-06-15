@@ -1,5 +1,6 @@
-package club.stewartbracken.game;
+package club.stewartbracken.game.components;
 
+import club.stewartbracken.game.Collision;
 import processing.core.PVector;
 
 public class Physics {
