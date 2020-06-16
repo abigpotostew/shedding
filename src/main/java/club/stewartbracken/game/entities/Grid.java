@@ -10,11 +10,9 @@ import processing.core.PVector;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 public class Grid
     implements Entity {
@@ -47,10 +45,14 @@ public class Grid
     }
 
     public void setEntity(final int x, final int y, final Entity e) {
+        setEntityNoPos(x,y,e);
+        e.getPhysics().setPos(worldPos(x, y));
+    }
+
+    public void setEntityNoPos(final int x, final int y, final Entity e) {
         removeEntity(e);
 
         this.grid[y][x] = e;
-        e.getPhysics().setPos(worldPos(x, y));
         this.lookup.put(e, new Cell(x, y));
     }
 
@@ -82,6 +84,21 @@ public class Grid
          new PVector(x * this.cellSize + this.cellSize / 2, y * this.cellSize + this.cellSize / 2));
     }
 
+
+    public PVector worldPosOffset(final Entity e, final PVector offset) {
+        if (this.lookup.containsKey(e)){
+            final Cell current = this.lookup.get(e);
+            int targetX = current.x + (int)offset.x;
+            int targetY = current.y + (int)offset.y;
+            if (!validCoords(targetX,targetY)){
+                throw new RuntimeException("invalid coordinates");
+            }
+            return worldPos(targetX,targetY);
+        }
+        throw new RuntimeException("invalid entity");
+
+    }
+
     public boolean canMove(final PVector delta, final Entity e) {
         return canMove((int) delta.x, (int) delta.y, e);
     }
@@ -103,16 +120,18 @@ public class Grid
         return targetEntity == null;
     }
 
-    public void moveEntity(final int dx, final int dy, final Entity e) {
+    // moves entity cell position but not world position
+    public void moveEntityCell(final int dx, final int dy, final Entity e) {
         if (!canMove(dx, dy, e)) {
             throw new RuntimeException("cannot move");
         }
         final Cell pos = this.lookup.get(e);
-        setEntity(pos.x + dx, pos.y + dy, e);
+        setEntityNoPos(pos.x + dx, pos.y + dy, e);
     }
 
-    public void moveEntity(final PVector delta, final Entity e) {
-        moveEntity((int) delta.x, (int) delta.y, e);
+    //moves entity but doesn't set position
+    public void moveEntityCell(final PVector delta, final Entity e) {
+        moveEntityCell((int) delta.x, (int) delta.y, e);
     }
 
     public Entity collidingEntity(final int dx, final int dy, final Entity e) {

@@ -6,4 +6,7 @@ public interface Context {
     PApplet app();
 
     float dt();
+
+    //seconds
+    float gameTime();
 }

@@ -35,10 +35,11 @@ public class Shedding
         background(0);
 
         final int startTime = millis();
+        final float startTimeFloat = 1f*startTime/1000;
 
         final float dt = ((float) (startTime - this.previousDrawTime)) / 1000f;
         //        Debug.log(String.format("%f",dt));
-        final Context context = this.game.context(dt);
+        final Context context = this.game.context(startTimeFloat, dt);
         this.game.update(context);
         this.game.draw(context);
         this.previousDrawTime = startTime;
