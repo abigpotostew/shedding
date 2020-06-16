@@ -19,7 +19,7 @@ public class Grid
 
     Physics physics;
     final int cellCountX, cellCountY;
-    final int cellSize;
+    public final int cellSize;
 
     final Entity[][] grid;
     final String id;
@@ -239,8 +239,9 @@ public class Grid
                     final List<Entity> neighbors = this.findNeighbors(x, y);
                     ctx.app().noFill();
 
-                    if (containsPickup(neighbors)){
-                        ctx.app().fill(70,64,43);
+                    int countPickups = numPickups(neighbors);
+                    if (countPickups>0){
+                        ctx.app().fill(70 + countPickups*15,64+countPickups*13,43+countPickups*10);
                     }
 
                     if (EntityUtils.isPickup(get(x,y))){
@@ -256,13 +257,14 @@ public class Grid
         });
     }
 
-    private boolean containsPickup(final List<Entity> entities) {
+    private int numPickups(final List<Entity> entities) {
+        int count=0;
         for (final Entity e : entities) {
             if (e.getId().startsWith("PICKUP")) {
-                return true;
+                ++count;
             }
         }
-        return false;
+        return count;
     }
 
     public static class Cell {

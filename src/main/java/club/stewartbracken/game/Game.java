@@ -15,7 +15,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 
 public class Game {
 
@@ -44,6 +45,8 @@ public class Game {
     private GameState prevState;
 
     private List<Animation> blockingAnimations;
+    // add animations after looping over them
+    private List<Animation> addBlockingAnimations;
 
     public Game(final PApplet applet, final GameConfig config) {
         this.applet = applet;
@@ -68,6 +71,7 @@ public class Game {
         addPickup(this.applet);
 
         this.blockingAnimations = new ArrayList<>();
+        this.addBlockingAnimations = new ArrayList<>();
     }
 
     private void addPickup(final PApplet applet) {
@@ -96,58 +100,36 @@ public class Game {
                     iter.remove();
                 }
             }
+            this.blockingAnimations.addAll(this.addBlockingAnimations);
+            this.addBlockingAnimations.clear();
         }
 
-        if (this.state == GameState.IDLE && !ap().keyPressed && this.priorKeyPressed) {
+        if (this.state == GameState.IDLE && ap().keyPressed) {
             PVector dir = null;
             if (ap().key == ACTION_LEFT) {
-                //move left
-                //                Debug.log("left");
+                Debug.debug("left");
                 dir = new PVector(-1, 0);
             }
             if (ap().key == ACTION_RIGHT) {
-                //                Debug.log("right");
+                Debug.debug("right");
                 dir = new PVector(1, 0);
             }
 
             if (ap().key == ACTION_UP) {
-                //                Debug.log("up");
+                Debug.debug("up");
                 dir = new PVector(0, -1);
             }
 
             if (ap().key == ACTION_DOWN) {
-                //                Debug.log("down");
+                Debug.debug("down");
                 dir = new PVector(0, 1);
             }
             if (dir != null) {
-                final PVector moveDir = dir;
-                if (this.grid.canMove(moveDir, this.player)) {
-                    // get end world position before moving the player so it doesn't double animate.
-                    final PVector endPos = this.grid.worldPosOffset(this.player, moveDir);
-                    this.grid.moveEntityCell(moveDir, this.player);
-                    lerp(ctx, this.player, this.player.getPhysics().getPos(),
-                        endPos, 0.25f, (e) -> {
-                        });
-
-                }
-                final PVector mirroredDir = moveDir.copy().mult(-1);
-//                if (this.grid.canMove(mirroredDir, this.other)) {
-//                    this.grid.moveEntityCell(mirroredDir, this.other);
-//                }
-                if (this.grid.canMove(mirroredDir, this.other)) {
-                    // get end world position before moving the player so it doesn't double animate.
-                    final PVector endPos = this.grid.worldPosOffset(this.other, mirroredDir);
-                    this.grid.moveEntityCell(mirroredDir, this.other);
-                    lerp(ctx, this.other, this.other.getPhysics().getPos(),
-                        endPos, 0.25f, (e) -> {
-                        });
-
-                }
+                doMovement(ctx, dir, this.player);
+                doMovement(ctx, dir.copy().mult(-1), this.other);
                 if (this.pickupStyle.equals(this.pickupStyleNeighbor)) {
                     pickupNeighbors(ctx);
-
                 }
-
             }
             if (this.gameStepCounter == this.nextPickupGametime) {
                 addPickup(ctx.app());
@@ -158,14 +140,49 @@ public class Game {
         this.prevState = this.state;
     }
 
+    private void doMovement(final Context ctx, final PVector moveDir, final Entity character) {
+        if (this.grid.canMove(moveDir, character)) {
+            // get end world position before moving the player so it doesn't double animate.
+            final PVector endPos = this.grid.worldPosOffset(character, moveDir);
+            this.grid.moveEntityCell(moveDir, character);
+            lerp(ctx, character, character.getPhysics().getPos(),
+                endPos, 0.25f, null, this.blockingAnimations);
+        }
+        else {
+            //add blocking animation to delay for walls
+            final PVector startPos = character.getPhysics().getPos();
+            final PVector endPos = PVector.add(character.getPhysics().getPos(),
+                PVector.mult(moveDir, .25f * this.grid.cellSize));
+            lerp(ctx, character, startPos,
+                endPos, 0.13f, (ctx1, e) -> {
+                    lerp(ctx1, e, e.getPhysics().getPos(), startPos, 0.11f, null, this.addBlockingAnimations);
+                },
+                this.blockingAnimations);
+        }
+    }
+
+    private void delay(final Context ctx, final float duration, final BooleanSupplier onComplete) {
+        final float startTime = ctx.gameTime();
+        this.blockingAnimations.add(ctx1 -> {
+            if ((ctx1.gameTime() - startTime) >= duration) {
+                if (onComplete != null) {
+                    onComplete.getAsBoolean();
+                }
+                return true;
+            }
+            return false;
+        });
+    }
+
     private void lerp(final Context ctx,
                       final Entity e,
                       final PVector start,
                       final PVector end,
                       final float duration,
-                      final Consumer<Entity> onComplete) {
+                      final BiConsumer<Context, Entity> onComplete,
+                      final List<Animation> destination) {
         final float startTime = ctx.gameTime();
-        this.blockingAnimations.add(ctx1 -> {
+        destination.add(ctx1 -> {
             float amount = (ctx1.gameTime() - startTime) / duration;
             if (amount > 1f) {
                 amount = 1f;
@@ -174,7 +191,9 @@ public class Game {
             e.getPhysics().setPos(pos);
             final boolean done = amount >= 1f;
             if (done) {
-                onComplete.accept(e);
+                if (onComplete != null) {
+                    onComplete.accept(ctx1, e);
+                }
             }
             return done;
         });
@@ -192,23 +211,16 @@ public class Game {
                 if (pn.getId().startsWith("PICKUP")) {
                     this.grid.removeEntity(pn);
                     this.pickups.remove(pn);
-
-                    //                    this.grid.setEntityRandom(ctx, pn);
                 }
             }
         }
     }
 
     public void draw(final Context ctx) {
-
-        //        this.grid.draw(ctx);
         drawEntity(ctx, this.grid);
         drawEntity(ctx, this.player);
         drawEntity(ctx, this.other);
-        //        this.player.getSprite().draw(ctx);
-        //        this.other.getSprite().draw(ctx);
         for (final Entity w : this.walls) {
-            //            w.draw(ctx);
             drawEntity(ctx, w);
         }
         for (final Entity w : this.pickups) {
@@ -221,10 +233,10 @@ public class Game {
         ap().ellipse(sub.x, sub.y, 5, 5);
 
         // debug stuff on top
-
-        ap().text(String.format("%.4f", ctx.dt()), ap().width - 25, 10);
+        ap().text(String.format("%.4f", ctx.dt()), ap().width - 45, 10);
 
         ap().text(String.format("%d", this.nextPickupGametime - this.gameStepCounter), 10, 10);
+        ap().text(String.format("%s", this.state), 10, 20);
     }
 
     private void drawEntity(final Context ctx, final Entity e) {

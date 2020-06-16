@@ -5,8 +5,8 @@ TODOs:
 - handdrawn glowing pickups
 - handdrawn grid
 - level builder parse from text
-- countdown to next pickup spawn
-    - todo make this more visually appealing
+- [x] countdown to next pickup spawn
+    - todo make this more visually appealing - an affect on the grid where colors on grid change to represent a countdown
 - some of pickups are enemies
-- movement animation
-- blocked movement animation when move towards a wall
+- [x] movement animation
+- [x] blocked movement animation when move towards a wall
