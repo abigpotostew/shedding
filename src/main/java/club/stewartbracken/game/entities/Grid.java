@@ -1,51 +1,50 @@
 package club.stewartbracken.game.entities;
 
+import club.stewartbracken.game.components.Physics;
 import club.stewartbracken.game.components.Sprite;
 import club.stewartbracken.game.context.Context;
 import club.stewartbracken.game.entity.Entity;
-import club.stewartbracken.game.components.Physics;
 import processing.core.PApplet;
 import processing.core.PVector;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 public class Grid
     implements Entity {
 
-    final int cellCount;
+    Physics physics;
+    final int cellCountX, cellCountY;
     final int cellSize;
 
     final Entity[][] grid;
     final String id;
 
-    Map<Entity, Cell> lookup = new HashMap<>();
+    final Map<Entity, Cell> lookup = new HashMap<>();
 
-    public Grid(final int cellCount, final PApplet app) {
-        this.cellCount = cellCount;
-        this.cellSize = app.width / this.cellCount;
-        this.grid = new Entity[cellCount][cellCount];
-        this.id=IdUtils.newId();
+    public Grid(final int cellCountX, final int cellCountY, final PApplet app) {
+        this(new PVector(),cellCountX,cellCountY,app);
+    }
+
+    public Grid(PVector position, final int cellCountX, final int cellCountY, final PApplet app) {
+        this.physics = new Physics(position);
+        this.cellCountX = cellCountX;
+        this.cellCountY = cellCountY;
+        this.cellSize = app.width / this.cellCountX;
+        this.grid = new Entity[cellCountY][cellCountX];
+        this.id = IdUtils.newId();
     }
 
     @Override
     public Physics getPhysics() {
-        return null;
+        return this.physics;
     }
-
-//    @Override
-//    public void update(final Context ctx) {
-//
-//    }
-//
-//    @Override
-//    public void draw(final Context ctx) {
-//
-//
-//    }
 
     public void setEntity(final int x, final int y, final Entity e) {
         removeEntity(e);
@@ -55,20 +54,20 @@ public class Grid
         this.lookup.put(e, new Cell(x, y));
     }
 
-    public void setEntityRandom(Context ctx, final Entity e){
-        int attempt=0;
+    public void setEntityRandom(final Context ctx, final Entity e) {
+        int attempt = 0;
         do {
-          int y = (int)ctx.app().random(this.grid.length);
-          int x = (int)ctx.app().random(this.grid[y].length);
-          if (grid[y][x] == null){
-              setEntity(x,y,e);
-              return;
-          }
-        }while(attempt++<this.cellCount*this.cellCount);
+            final int y = (int) ctx.app().random(this.grid.length);
+            final int x = (int) ctx.app().random(this.grid[y].length);
+            if (this.grid[y][x] == null) {
+                setEntity(x, y, e);
+                return;
+            }
+        } while (attempt++ < this.cellCountY * this.cellCountX);
         throw new RuntimeException("can't find an empty cell");
     }
 
-    public boolean removeEntity(final Entity e){
+    public boolean removeEntity(final Entity e) {
         if (this.lookup.containsKey(e)) {
             final Cell pos = this.lookup.get(e);
             this.grid[pos.y][pos.x] = null;
@@ -79,7 +78,8 @@ public class Grid
     }
 
     public PVector worldPos(final int x, final int y) {
-        return new PVector(x * this.cellSize+cellSize/2, y * this.cellSize+cellSize/2);
+        return PVector.add(this.physics.getPos(),
+         new PVector(x * this.cellSize + this.cellSize / 2, y * this.cellSize + this.cellSize / 2));
     }
 
     public boolean canMove(final PVector delta, final Entity e) {
@@ -115,40 +115,27 @@ public class Grid
         moveEntity((int) delta.x, (int) delta.y, e);
     }
 
-    public Entity collidingEntity(int dx, int dy, final Entity e){
+    public Entity collidingEntity(final int dx, final int dy, final Entity e) {
         final Cell pos = this.lookup.get(e);
         final int x = pos.x;
         final int y = pos.y;
         final int nx = x + dx;
         final int ny = y + dy;
-        return get(nx,ny);
+        return get(nx, ny);
     }
 
-    private Entity get(int x, int y){
-        if (y < 0 || y >= this.grid.length) {
+    private Entity get(final int x, final int y) {
+        if (!validCoords(x, y)) {
             return null;
         }
-        if (x < 0 || x >= this.grid[y].length) {
-            return null;
-        }
-        return grid[y][x];
-    }
-
-    private static class Cell {
-
-        int x, y;
-
-        public Cell(final int x, final int y) {
-            this.x = x;
-            this.y = y;
-        }
+        return this.grid[y][x];
     }
 
     public List<Entity> initWalls(final PApplet app) {
         final List<Entity> walls = new ArrayList<>();
         for (int y = 0; y < this.grid.length; ++y) {
             for (int x = 0; x < this.grid[y].length; ++x) {
-                if (app.random(1) > .9 && grid[y][x]==null) {
+                if (app.random(1) > .9 && this.grid[y][x] == null) {
                     final Entity wall = EFactory.createWall(new PVector());
                     walls.add(wall);
                     setEntity(x, y, wall);
@@ -158,33 +145,37 @@ public class Grid
         return walls;
     }
 
-    public List<Entity> addPickups(final Context ctx, final int count) {
-        final List<Entity> pickups = new ArrayList<>();
+    public Entity addPickup(final Context ctx, String image) {
+//        final List<Entity> pickups = new ArrayList<>();
 
-        for(int i=0;i<count;++i){
-            final Entity pickup = EFactory.createPickup(new PVector());
-//            final int x = (int) ctx.app().random(this.cellCount);
-//            final int y = (int) ctx.app().random(this.cellCount);
-//            setEntity(x, y, pickup);
+//        for (int i = 0; i < count; ++i) {
+            final Entity pickup = EFactory.createPickup(new PVector(), this.cellSize, image);
             setEntityRandom(ctx, pickup);
-            pickups.add(pickup);
-        }
-        return pickups;
+//            pickup.add(pickup);
+//        }
+        return pickup;
     }
 
-    public List<Entity> findNeighbors(Entity e){
-        if (!lookup.containsKey(e)){
+    public List<Entity> findNeighbors(final Entity e) {
+        if (!this.lookup.containsKey(e)) {
             return Collections.emptyList();
         }
-        List<Entity> out = new ArrayList<>();
         final Cell pos = this.lookup.get(e);
-        for(int x=-1;x<=1;++x){
-            for(int y=-1;y<=1;++y){
-                if(x==0&&y==0){
+        return findNeighbors(pos.x, pos.y);
+    }
+
+    public List<Entity> findNeighbors(final int startx, final int starty) {
+        if (!validCoords(startx, starty)) {
+            return Collections.emptyList();
+        }
+        final List<Entity> out = new ArrayList<>();
+        for (int x = -1; x <= 1; ++x) {
+            for (int y = -1; y <= 1; ++y) {
+                if (x == 0 && y == 0) {
                     continue;
                 }
-                Entity entity = get(x+pos.x, y+pos.y);
-                if (entity!=null) {
+                final Entity entity = get(x + startx, y + starty);
+                if (entity != null) {
                     out.add(entity);
                 }
             }
@@ -192,9 +183,30 @@ public class Grid
         return out;
     }
 
+    public List<Cell> neighborCells(final int startx, final int starty) {
+        if (!validCoords(startx, starty)) {
+            return Collections.emptyList();
+        }
+        final List<Cell> out = new ArrayList<>();
+        for (int x = -1; x <= 1; ++x) {
+            for (int y = -1; y <= 1; ++y) {
+                    out.add(new Cell(x+startx,y+starty));
+
+            }
+        }
+        return out;
+    }
+
+    private boolean validCoords(final int x, final int y) {
+        if (y < 0 || y >= this.grid.length) {
+            return false;
+        }
+        return x >= 0 && x < this.grid[y].length;
+    }
+
     @Override
     public String getId() {
-        return "GRID"+id;
+        return "GRID" + this.id;
     }
 
     @Override
@@ -204,14 +216,64 @@ public class Grid
                 for (int x = 0; x < this.grid[y].length; ++x) {
                     ctx.app().rectMode(ctx.app().CENTER);
                     ctx.app().stroke(200, 150, 0);
-                    //                ctx.app().fill(0);
+
+                    final List<Entity> neighbors = this.findNeighbors(x, y);
                     ctx.app().noFill();
-                    final float drawx = x * this.cellSize+cellSize/2;
-                    final float drawy = y * this.cellSize+cellSize/2;
-                    ctx.app().rect(drawx, drawy, this.cellSize, this.cellSize);
-                    ctx.app().ellipse(worldPos(x, y).x, worldPos(x, y).y, 2, 2);
+
+                    if (containsPickup(neighbors)){
+                        ctx.app().fill(70,64,43);
+                    }
+
+                    if (EntityUtils.isPickup(get(x,y))){
+                        ctx.app().fill(70,64,43);
+                    }
+
+                    final PVector pos = worldPos(x,y);
+
+                    ctx.app().rect(pos.x, pos.y, this.cellSize, this.cellSize);
+//                    ctx.app().ellipse(worldPos(x, y).x, worldPos(x, y).y, 2, 2);
                 }
             }
         });
     }
+
+    private boolean containsPickup(final List<Entity> entities) {
+        for (final Entity e : entities) {
+            if (e.getId().startsWith("PICKUP")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static class Cell {
+
+        int x, y;
+        int dist;
+
+        public Cell(final int x, final int y) {
+            this.x = x;
+            this.y = y;
+        }
+
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final Cell cell = (Cell) o;
+            return this.x == cell.x &&
+                this.y == cell.y;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.x, this.y);
+        }
+    }
+
 }

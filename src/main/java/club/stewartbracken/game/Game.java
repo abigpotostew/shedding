@@ -1,6 +1,7 @@
 package club.stewartbracken.game;
 
 import club.stewartbracken.Debug;
+import club.stewartbracken.game.asset.AssetManager;
 import club.stewartbracken.game.context.Context;
 import club.stewartbracken.game.context.Factory;
 import club.stewartbracken.game.context.GameContext;
@@ -11,6 +12,7 @@ import processing.core.PApplet;
 import processing.core.PVector;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Game {
@@ -19,43 +21,52 @@ public class Game {
     private static final char ACTION_RIGHT = 'd';
     private static final char ACTION_UP = 'w';
     private static final char ACTION_DOWN = 's';
-
+    final String pickupStyleCollide = "COLLIDE";
+    final String pickupStyleNeighbor = "NEIGHBOR";
+    final GameConfig config;
     private final PApplet applet;
-
     Entity player;
     Entity other;
     Grid grid;
     List<Entity> walls;
     List<Entity> pickups;
-
-    final String pickupStyleCollide = "COLLIDE";
-    final String pickupStyleNeighbor = "NEIGHBOR";
+    List<String> pickupImageNames;
     String pickupStyle = this.pickupStyleNeighbor;
-
-    final int cellCount = 15;
-
     int gameStepCounter = 0;
     int nextPickupGametime;
+    int numPickupsRunning = 0;
 
     boolean priorKeyPressed;
 
-    public Game(final PApplet applet) {
+    public Game(final PApplet applet, final GameConfig config) {
         this.applet = applet;
+        this.config = config;
+        init();
+    }
+
+    private void init() {
         this.player = EFactory.createPlayer(new PVector(this.applet.width / 2 - 100, this.applet.height / 2, 0));
         this.other = EFactory.createOther(new PVector(this.applet.width / 2 + 100, this.applet.height / 2, 0));
-        this.grid = new Grid(this.cellCount, applet);
-        this.grid.setEntity(5, 7, this.player);
-        this.grid.setEntity(9, 7, this.other);
+        this.grid = new Grid(new PVector(0, 50),this.config.getCellCountX(), this.config.getCellCountY(), this.applet);
+        this.grid.setEntity(this.config.getCellCountX() / 2 - 1, this.config.getCellCountY() / 2, this.player);
+        this.grid.setEntity(this.config.getCellCountX() / 2 + 1, this.config.getCellCountY() / 2, this.other);
 
         this.walls = this.grid.initWalls(this.applet);
 
+        this.pickupImageNames = AssetManager.pickupImageNames();
+        Collections.shuffle(this.pickupImageNames);
         this.pickups = new ArrayList<>();
-        addPickup(applet);
+        addPickup(this.applet);
     }
 
-    private void addPickup(PApplet applet){
-        this.pickups.addAll(this.grid.addPickups(Factory.newCtx(applet), 1));
-        nextPickupGametime = gameStepCounter+(int)applet.random(20, 50);
+    private void addPickup(final PApplet applet) {
+        ++this.numPickupsRunning;
+        final String imageName = this.pickupImageNames.get(this.nextPickupGametime % this.pickupImageNames.size());
+        Debug.log("addPickup: " + imageName);
+        final Entity pickup = this.grid.addPickup(Factory.newCtx(applet),
+            imageName);
+        this.pickups.add(pickup);
+        this.nextPickupGametime = this.gameStepCounter + (int) applet.random(15, 15);
     }
 
     public void update(final Context ctx) {
@@ -102,10 +113,10 @@ public class Game {
                 }
 
             }
-            if (gameStepCounter==nextPickupGametime){
+            if (this.gameStepCounter == this.nextPickupGametime) {
                 addPickup(ctx.app());
             }
-            ++gameStepCounter;
+            ++this.gameStepCounter;
         }
         this.priorKeyPressed = ap().keyPressed;
     }
@@ -123,7 +134,7 @@ public class Game {
                     this.grid.removeEntity(pn);
                     this.pickups.remove(pn);
 
-//                    this.grid.setEntityRandom(ctx, pn);
+                    //                    this.grid.setEntityRandom(ctx, pn);
                 }
             }
         }
@@ -131,14 +142,14 @@ public class Game {
 
     public void draw(final Context ctx) {
 
-//        this.grid.draw(ctx);
+        //        this.grid.draw(ctx);
         drawEntity(ctx, this.grid);
         drawEntity(ctx, this.player);
         drawEntity(ctx, this.other);
-//        this.player.getSprite().draw(ctx);
-//        this.other.getSprite().draw(ctx);
+        //        this.player.getSprite().draw(ctx);
+        //        this.other.getSprite().draw(ctx);
         for (final Entity w : this.walls) {
-//            w.draw(ctx);
+            //            w.draw(ctx);
             drawEntity(ctx, w);
         }
         for (final Entity w : this.pickups) {
@@ -152,9 +163,12 @@ public class Game {
 
         // debug stuff on top
 
-        ap().text(String.format("%.4f", ctx.dt()), 10, 10);
+        ap().text(String.format("%.4f", ctx.dt()), ap().width-25, 10);
+
+        ap().text(String.format("%d", this.nextPickupGametime-this.gameStepCounter), 10, 10);
     }
-    private void drawEntity(final Context ctx, final Entity e){
+
+    private void drawEntity(final Context ctx, final Entity e) {
         e.getSprite().draw(ctx, e.getPhysics());
     }
 
