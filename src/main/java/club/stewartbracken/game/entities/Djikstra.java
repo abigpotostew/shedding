@@ -79,6 +79,7 @@ public class Djikstra {
         public int node;
         public int cost;
 
+
         public Node() {
         }
 

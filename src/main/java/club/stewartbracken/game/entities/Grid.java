@@ -246,7 +246,7 @@ public class Grid
         return false;
     }
 
-    private static class Cell {
+    public static class Cell {
 
         int x, y;
         int dist;

@@ -1,0 +1,12 @@
+Shedding notes and todos
+
+TODOs:
+- WoW pickup
+- handdrawn glowing pickups
+- handdrawn grid
+- level builder parse from text
+- countdown to next pickup spawn
+    - todo make this more visually appealing
+- some of pickups are enemies
+- movement animation
+- blocked movement animation when move towards a wall
