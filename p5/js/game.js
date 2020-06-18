@@ -52,8 +52,8 @@ class Game {
         let level = this.#config.levels[idx]
         console.log("loading level:", level.name)
         let levelGrid = level.grid
-        for(var y=0;y<this.#grid.grid.length; y++){
-            for(var x=0;x<this.#grid.grid[y].length; x++){
+        for(var y=0;y<this.#grid.store.sizeY; y++){
+            for(var x=0;x<this.#grid.store.sizeY; x++){
                 let dataE = levelGrid[y][x]
                 let e = null
                 if (dataE===GameData.TYPE_PLAYER){
