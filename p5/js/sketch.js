@@ -1,7 +1,5 @@
 const s = (sketch) => {
 
-    let x = 100;
-    let y = 100;
     let config = null;
     let game = null;
     let previousDrawTimeSeconds = 0;
@@ -34,10 +32,10 @@ const s = (sketch) => {
         if (e.key == 'r') {
             game = new Game(sketch, config)
         }
-        game.keyReleased(e)
+        game.keyPressed(e)
     }
     sketch.keyReleased = (e) => {
-        game.keyPressed(e)
+        game.keyReleased(e)
     }
     sketch.preload = () => {
         assetManager.load(sketch)

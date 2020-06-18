@@ -13,19 +13,19 @@ class Game {
     #nextPickupGameTime = 0;
     #gameStepCounter = 0;
 
-    #keyIsPressed = false
-    #keyPressedCurrent = null;
-    #priorKeyPressed = "";
 
     #blockingAnimations = []
     #addBlockingAnimations = []
+    #nonBlockingAnimations = []
 
     #pickupImageNames = []
+
+    #keysPressed=[]
 
     constructor(sketch, config) {
         this.#sketch = sketch
         this.#config = config
-        this.#grid = new Grid(sketch.createVector(0, 50), config.cellCountX, config.cellCountY, sketch)
+        this.#grid = new Grid(sketch.createVector(3, 50), config.cellCountX, config.cellCountY, sketch)
         this.#player = EFactory.createPlayer(sketch.createVector(sketch.width / 2 - 100, sketch.height / 2))
         this.#other = EFactory.createOther(sketch.createVector(sketch.width / 2 + 100, sketch.height / 2))
         this.#grid.setEntity(Math.floor(this.#config.cellCountX / 2) - 1, Math.floor(this.#config.cellCountY / 2), this.#player)
@@ -47,6 +47,15 @@ class Game {
             this.#state = Game.STATE_IDLE
         }
 
+        if (this.#nonBlockingAnimations.length > 0) {
+            for (var i = this.#nonBlockingAnimations.length - 1; i >= 0; i--) {
+                let a = this.#nonBlockingAnimations[i]
+                if (a(ctx)) {
+                    this.#nonBlockingAnimations.splice(i, 1)
+                }
+            }
+        }
+
         if (this.#state === Game.STATE_ANIMATING) {
             for (var i = this.#blockingAnimations.length - 1; i >= 0; i--) {
                 let a = this.#blockingAnimations[i]
@@ -58,9 +67,9 @@ class Game {
             this.#addBlockingAnimations = [];
         }
 
-        if (this.#state === Game.STATE_IDLE && this.#keyPressedCurrent) {
+        if (this.#state === Game.STATE_IDLE && this.#keysPressed.length>0) {
             let dir = null
-            let key = this.#keyPressedCurrent
+            let key = this.#keysPressed[this.#keysPressed.length-1]
             if (key == Game.ACTION_LEFT) {
                 dir = ctx.sketch.createVector(-1, 0)
             }
@@ -80,11 +89,10 @@ class Game {
             this.pickupNeighbors(ctx)
 
             if (this.#gameStepCounter == this.#nextPickupGameTime) {
-                this.addPickup(ctx.sketch)
+                this.addPickupDelay(ctx, this.#other.physics.pos)
             }
             this.#gameStepCounter++;
         }
-        this.#keyPressedCurrent = null
         this.#prevState = this.#state
     }
 
@@ -115,6 +123,18 @@ class Game {
         return arr;
     }
 
+    removeItemAll(arr, value) {
+        var i = 0;
+        while (i < arr.length) {
+            if (arr[i] === value) {
+                arr.splice(i, 1);
+            } else {
+                ++i;
+            }
+        }
+        return arr;
+    }
+
     doMovement(ctx, dir, e) {
         if (this.#grid.canMove(dir, e)) {
             // console.log("can move")
@@ -132,7 +152,7 @@ class Game {
         }
     }
 
-    lerp(ctx, e, startPos, endPos, duration, onComplete, addTo) {
+    lerp(ctx, e, startPos, endPos, duration, onComplete, addTo,debug) {
         let startTime = ctx.gameTime
         let animation = function (ctx1) {
             let amount = (ctx1.gameTime - startTime) / duration;
@@ -140,6 +160,10 @@ class Game {
                 amount = 1
             }
             let pos = p5.Vector.lerp(startPos, endPos, amount);
+            if(debug && Math.floor( amount*100)%10===0){
+                console.log("amount:",amount)
+                console.log("pos:", pos.toString())
+            }
             e.physics.pos = pos;
             let done = amount >= 1
             if (done) {
@@ -153,13 +177,13 @@ class Game {
     }
 
     keyPressed(e) {
-        this.#keyIsPressed = true
-        this.#keyPressedCurrent = e.key
+        if (e.key in Game.ACTIONS) {
+            this.#keysPressed.push(e.key)
+        }
     }
 
     keyReleased(e) {
-        // this.#keyIsPressed = false
-        // this.#keyPressedCurrent = null
+        this.removeItemAll(this.#keysPressed, e.key)
     }
 
     draw(ctx) {
@@ -201,14 +225,34 @@ class Game {
         e.sprite.draw(ctx, e.physics)
     }
 
+    addPickupDelay(ctx, startPos) {
+        this.#numPickupsRunning++;
+        let imageName = this.#pickupImageNames[this.#numPickupsRunning % this.#pickupImageNames.length];
+        let image = this.#config.assetManager.getImage(imageName)
+
+        let pickup = EFactory.createPickup(startPos, this.#grid.cellSize, image)
+        // let pickup = this.#grid.addPickup(new Context(sketch), image)
+        this.#pickups.push(pickup)
+
+        let res = this.#grid.randomEmptyCellAndWorldPos(ctx)
+        let cell = res[0]
+        let pos = res[1]
+        let thisGame = this
+        // console.log("start:",ctx.gameTime)
+        this.lerp(ctx, pickup, startPos, pos, 1.05, function(ctx, e){
+            thisGame.#grid.setEntity(cell.x, cell.y, e)
+            // console.log("end:",ctx.gameTime)
+        }, this.#nonBlockingAnimations)
+
+        this.#nextPickupGameTime = this.#gameStepCounter + 15
+    }
     addPickup(sketch) {
         this.#numPickupsRunning++;
-        let imageName = this.#pickupImageNames[this.#nextPickupGameTime % this.#pickupImageNames.length];
+        let imageName = this.#pickupImageNames[this.#numPickupsRunning % this.#pickupImageNames.length];
         let image = this.#config.assetManager.getImage(imageName)
         let pickup = this.#grid.addPickup(new Context(sketch), image)
         this.#pickups.push(pickup)
         this.#nextPickupGameTime = this.#gameStepCounter + 15
-
     }
 }
 
@@ -216,5 +260,11 @@ Game.ACTION_LEFT = 'a';
 Game.ACTION_RIGHT = 'd';
 Game.ACTION_UP = 'w';
 Game.ACTION_DOWN = 's';
+Game.ACTIONS={
+    'a':Game.ACTION_LEFT,
+    'd':Game.ACTION_RIGHT,
+    'w':Game.ACTION_UP,
+    's':Game.ACTION_DOWN,
+}
 Game.STATE_IDLE = 0;
 Game.STATE_ANIMATING = 1;

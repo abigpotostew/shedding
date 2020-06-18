@@ -11,7 +11,14 @@ TODOs:
 - some of pickups are enemies
 - [x] movement animation
 - [x] blocked movement animation when move towards a wall
+- ry character gets more fuzzy or hectic as more memories on ground
 
+- narrative when something is picked up
+- something happens when player picks up all types
+
+- ry moves randomly sometimes?
+- experiment with mirror not moving if either is blocked
+- animation for pickups to move from ry to their grid position
 
 other
 - [x] javascript

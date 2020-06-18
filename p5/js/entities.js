@@ -104,13 +104,17 @@ class Grid extends Entity {
     }
 
     setEntityRandom(ctx, e) {
+        let celPos = this.randomEmptyCellAndWorldPos(ctx)[0]
+        this.setEntity(celPos.x, celPos.y,e)
+    }
+
+    randomEmptyCellAndWorldPos(ctx){
         var attempt = 0;
         do {
             let y = Math.floor(ctx.sketch.random(this.grid.length));
             let x = Math.floor(ctx.sketch.random(this.grid[y].length));
             if (this.grid[y][x] == null) {
-                this.setEntity(x, y, e);
-                return;
+                return [ctx.sketch.createVector(x,y), this.worldPos(x,y)]
             }
         } while (attempt++ < this.cellCountX * this.cellCountX);
         throw new Error("can't find an empty cell");
@@ -173,15 +177,18 @@ class Grid extends Entity {
                         let neighbors = egrid.findNeighbors(x, y);
                         ctx.sketch.noFill();
 
-                        let countPickups = egrid.numEntityOfType(neighbors, "PICKUP");
+                        let countPickups = 0
+                        let e=egrid.getEntity(x,y)
+                        if (e!=null && e.id.startsWith("PICKUP")){
+                            countPickups =1
+                        }
+
+                        countPickups =countPickups+ egrid.numEntityOfType(neighbors, "PICKUP");
                         if (countPickups > 0) {
                             ctx.sketch.fill(70 + countPickups * 15, 64 + countPickups * 13, 43 + countPickups * 10);
                         }
 
-                        let e=egrid.getEntity(x,y)
-                        if (e!=null && e.id.startsWith("PICKUP")){
-                            ctx.sketch.fill(70, 64, 43);
-                        }
+
 
                         let pos = egrid.worldPos(x, y);
 

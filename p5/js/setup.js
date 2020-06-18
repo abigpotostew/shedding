@@ -149,7 +149,7 @@ class AssetManager {
             let imageName = this.#imageNames[i]
             let imagePath = "assets/" + imageName
             this.#images[imageName] = sketch.loadImage(imagePath)
-            console.log("loaded ", imagePath)
+            // console.log("loaded ", imagePath)
         }
     }
 
