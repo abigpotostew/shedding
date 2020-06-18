@@ -227,16 +227,20 @@ public class Game {
             drawEntity(ctx, w);
         }
 
-        ap().fill(255);
-        PVector sub = PVector.sub(this.other.getPhysics().getPos(), this.player.getPhysics().getPos());
-        sub = sub.mult(0.5f).add(this.player.getPhysics().getPos());
-        ap().ellipse(sub.x, sub.y, 5, 5);
+        // dot in between the players
+//        debugMiddleDot();
 
         // debug stuff on top
         ap().text(String.format("%.4f", ctx.dt()), ap().width - 45, 10);
 
         ap().text(String.format("%d", this.nextPickupGametime - this.gameStepCounter), 10, 10);
         ap().text(String.format("%s", this.state), 10, 20);
+    }
+    void debugMiddleDot(){
+        ap().fill(255);
+        PVector sub = PVector.sub(this.other.getPhysics().getPos(), this.player.getPhysics().getPos());
+        sub = sub.mult(0.5f).add(this.player.getPhysics().getPos());
+        ap().ellipse(sub.x, sub.y, 5, 5);
     }
 
     private void drawEntity(final Context ctx, final Entity e) {

@@ -2,6 +2,7 @@ Shedding notes and todos
 
 TODOs:
 - WoW pickup
+- ff7 pickup
 - handdrawn glowing pickups
 - handdrawn grid
 - level builder parse from text
@@ -10,3 +11,7 @@ TODOs:
 - some of pickups are enemies
 - [x] movement animation
 - [x] blocked movement animation when move towards a wall
+
+
+other
+- [x] javascript

@@ -18,9 +18,9 @@ public class Shedding
     public void settings() {
         size(750, 800);
 
-        final int cellCountX = 8;
+        final int cellCountX = 7;
         final int cellSizeX = this.width / cellCountX;
-        final GameConfig.GameConfigBuilder configBuilder = GameConfig.builder().setCellCountX(12).setCellCountY(
+        final GameConfig.GameConfigBuilder configBuilder = GameConfig.builder().setCellCountX(cellCountX).setCellCountY(
             this.height / cellSizeX);
         this.config = configBuilder.build();
 
