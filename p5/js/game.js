@@ -7,8 +7,8 @@ class Game {
     #grid = Grid;
     #player = null;
     #other = null;
-    #walls = null;
-    #pickups = null;
+    #walls = [];
+    #pickups = [];
     #numPickupsRunning = 0;
     #nextPickupGameTime = 0;
     #gameStepCounter = 0;
@@ -25,19 +25,57 @@ class Game {
     constructor(sketch, config) {
         this.#sketch = sketch
         this.#config = config
-        this.#grid = new Grid(sketch.createVector(3, 50), config.cellCountX, config.cellCountY, sketch)
-        this.#player = EFactory.createPlayer(sketch.createVector(sketch.width / 2 - 100, sketch.height / 2))
-        this.#other = EFactory.createOther(sketch.createVector(sketch.width / 2 + 100, sketch.height / 2))
-        this.#grid.setEntity(Math.floor(this.#config.cellCountX / 2) - 1, Math.floor(this.#config.cellCountY / 2), this.#player)
-        this.#grid.setEntity(Math.floor(this.#config.cellCountX / 2) + 1, Math.floor(this.#config.cellCountY / 2), this.#other)
-
-
-        this.#walls = this.#grid.initWalls(sketch)
-
         this.#pickupImageNames = config.assetManager.pickupImageNames();
         this.#pickups = []
-        this.addPickup(sketch)
+
+        this.load(sketch)
     }
+
+    load(sketch){
+        const loadLevels = true
+        if (loadLevels) {
+            this.loadLevel(0,sketch)
+        }else{
+            this.#grid = new Grid(sketch.createVector(3, 50), config.cellCountX, config.cellCountY, sketch)
+            this.#player = EFactory.createPlayer(sketch.createVector(sketch.width / 2 - 100, sketch.height / 2))
+            this.#other = EFactory.createOther(sketch.createVector(sketch.width / 2 + 100, sketch.height / 2))
+            this.#grid.setEntity(Math.floor(this.#config.cellCountX / 2) - 1, Math.floor(this.#config.cellCountY / 2), this.#player)
+            this.#grid.setEntity(Math.floor(this.#config.cellCountX / 2) + 1, Math.floor(this.#config.cellCountY / 2), this.#other)
+            this.#walls = this.#grid.initWalls(sketch)
+            this.addPickup(sketch)
+        }
+    }
+
+    loadLevel(idx,sketch){
+        this.#grid = new Grid(sketch.createVector(3, 50), this.#config.cellCountX, this.#config.cellCountY, sketch)
+
+        let level = this.#config.levels[idx]
+        console.log("loading level:", level.name)
+        let levelGrid = level.grid
+        for(var y=0;y<this.#grid.grid.length; y++){
+            for(var x=0;x<this.#grid.grid[y].length; x++){
+                let dataE = levelGrid[y][x]
+                let e = null
+                if (dataE===GameData.TYPE_PLAYER){
+                    e=EFactory.createPlayer(sketch.createVector(0,0))
+                    this.#player=e
+                }else if (dataE===GameData.TYPE_OTHER){
+                    e=EFactory.createOther(sketch.createVector(0,0))
+                    this.#other=e
+                }else if(dataE===GameData.TYPE_WALL){
+                    e=EFactory.createWall(sketch.createVector())
+                    this.#walls.push(e)
+                }
+                if(e!=null) {
+                    this.#grid.setEntity(x, y, e)
+                }
+            }
+        }
+    }
+
+    // clear(){
+    //     this.#=grid =
+    // }
 
     update(ctx) {
 
@@ -106,7 +144,7 @@ class Game {
         for (var i = 0; i < pNeighbors.length; i++) {
             let pn = pNeighbors[i]
             if (oNeighbors.includes(pn)) {
-                if (pn.id.startsWith("PICKUP")) {
+                if (pn.id.startsWith(GameData.TYPE_PICKUP)) {
                     this.#grid.removeEntity(pn);
                     // this.#pickups.remove(pn);
                     this.removeItemOnce(this.#pickups, pn)

@@ -3,6 +3,7 @@ class GameConfig {
     #cellCountX = 0
     #cellCountY = 0
     #assetManager = null
+    #_levels = []
 
     constructor() {
 
@@ -30,6 +31,15 @@ class GameConfig {
 
     set assetManager(value) {
         this.#assetManager = value;
+    }
+
+
+    get levels() {
+        return this.#_levels;
+    }
+
+    set levels(value) {
+        this.#_levels = value;
     }
 }
 

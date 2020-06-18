@@ -13,6 +13,7 @@ const s = (sketch) => {
         config.cellCountX = cellCountX
         config.cellCountY = cellCountX;
         config.assetManager = assetManager
+        config.levels = GameData.getLevels()
         game = new Game(sketch, config)
     };
 

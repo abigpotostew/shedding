@@ -179,11 +179,11 @@ class Grid extends Entity {
 
                         let countPickups = 0
                         let e=egrid.getEntity(x,y)
-                        if (e!=null && e.id.startsWith("PICKUP")){
+                        if (e!=null && e.id.startsWith(GameData.TYPE_PICKUP)){
                             countPickups =1
                         }
 
-                        countPickups =countPickups+ egrid.numEntityOfType(neighbors, "PICKUP");
+                        countPickups =countPickups+ egrid.numEntityOfType(neighbors, GameData.TYPE_PICKUP);
                         if (countPickups > 0) {
                             ctx.sketch.fill(70 + countPickups * 15, 64 + countPickups * 13, 43 + countPickups * 10);
                         }
@@ -214,7 +214,7 @@ class Grid extends Entity {
 
 class EFactory {
     static createPlayer(pos) {
-        return new Entity(new Physics(pos), IdUtils.newId("PLAYER"), {
+        return new Entity(new Physics(pos), IdUtils.newId(GameData.TYPE_PLAYER), {
             draw(ctx, phys) {
                 ctx.sketch.fill(0, 200, 0)
                 ctx.sketch.stroke(255)
@@ -224,7 +224,7 @@ class EFactory {
     }
 
     static createOther(pos) {
-        return new Entity(new Physics(pos), IdUtils.newId("OTHER"), {
+        return new Entity(new Physics(pos), IdUtils.newId(GameData.TYPE_OTHER), {
             draw(ctx, phys) {
                 ctx.sketch.fill(200, 0, 0)
                 ctx.sketch.stroke(255)
@@ -234,7 +234,7 @@ class EFactory {
     }
 
     static createWall(pos) {
-        return new Entity(new Physics(pos), IdUtils.newId("OTHER"), {
+        return new Entity(new Physics(pos), IdUtils.newId(GameData.TYPE_WALL), {
             draw(ctx, phys) {
                 ctx.sketch.rectMode(ctx.sketch.CENTER);
                 ctx.sketch.fill(200, 60, 150)
@@ -245,7 +245,7 @@ class EFactory {
     }
 
     static createPickup(pos, maxSize, image) {
-        return new Entity(new Physics(pos), IdUtils.newId("PICKUP"), {
+        return new Entity(new Physics(pos), IdUtils.newId(GameData.TYPE_PICKUP), {
             draw(ctx, phys) {
                 ctx.sketch.imageMode(ctx.sketch.CENTER)
                 let w = image.width
