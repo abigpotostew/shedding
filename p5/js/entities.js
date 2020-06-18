@@ -1,3 +1,71 @@
+class EntityStore {
+    items={}
+    lookupByItem={}
+    sizeY=0
+    sizeX=0
+
+    constructor(sizeX, sizeY) {
+        this.sizeY = sizeY;
+        this.sizeX = sizeX;
+    }
+
+    removeEntity(entity){
+        let cell = this.lookupByItem[entity.id]
+        if (cell==null){
+            return false
+        }
+        let bucket = this.items[cell.y*this.sizeY+cell.x]
+        bucket[entity.id]=null
+        this.lookupByItem[entity.id] = null
+        return true
+    }
+
+    put(x,y,entity){
+        if(!this.inBounds(x,y)){
+            throw new Error("out of bounds");
+        }
+        this.removeEntity(entity)
+
+        let bucket = this.items[y*this.sizeY+x]
+        if (bucket==null){
+            bucket = {}
+        }
+        bucket[entity.id]=entity
+        this.items[y*this.sizeY+x] = bucket
+        this.lookupByItem[entity.id] = new Cell(x,y)
+    }
+
+    findAt(x,y){
+        if(!this.inBounds(x,y)){
+            throw new Error("out of bounds");
+        }
+        let bucket = this.items[y*this.sizeY+x]
+        let output = []
+        for (let [key, value] of Object.entries(bucket)) {
+            output.push(value)
+        }
+        return output
+    }
+
+    findItem(entity) {
+        let cell = this.lookupByItem[entity.id]
+        if (cell==null){
+            return null
+        }
+        return this.items[cell.y*this.sizeY+cell.x][entity.id]
+    }
+
+    inBounds(x,y){
+        if (x<0 || x>= this.sizeX){
+            return false
+        }
+        if (y<0 || y>= this.sizeY){
+            return false
+        }
+        return true
+    }
+}
+
 class Grid extends Entity {
 
     cellCountX = 0;
@@ -5,6 +73,8 @@ class Grid extends Entity {
     cellSize = 0;
     #lookup = {};
     grid = []
+
+    store = EntityStore
 
     constructor(position, cellCountX, cellCountY, sketch) {
         super(new Physics(position), IdUtils.newId("GRID"), null);
@@ -15,7 +85,7 @@ class Grid extends Entity {
         for (var i = 0; i < cellCountY; i += 1) {
             this.grid[i] = new Array(cellCountX)
         }
-
+        this.store = new EntityStore(cellCountX,cellCountY)
     }
 
     worldPos(x, y) {
@@ -61,10 +131,7 @@ class Grid extends Entity {
     }
 
     validCoords(x, y) {
-        if (y < 0 || y >= this.grid.length) {
-            return false;
-        }
-        return x >= 0 && x < this.grid[y].length;
+        return this.store.inBounds(x,y)
     }
 
     initWalls(sketch) {
