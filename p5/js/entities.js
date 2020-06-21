@@ -88,7 +88,7 @@ class Grid extends Entity {
     cellCountX = 0;
     cellCountY = 0;
     cellSize = 0;
-    #lookup = {};
+    _lookup = {};
     grid = []
 
     store = EntityStore
@@ -173,16 +173,16 @@ class Grid extends Entity {
     setEntityNoPos(x, y, e) {
         // this.removeEntity(e)
         // this.grid[y][x] = e;
-        // this.#lookup[e.id] = new Cell(x, y);
+        // this._lookup[e.id] = new Cell(x, y);
         this.store.putEntity(x, y, e)
     }
 
     removeEntity(e) {
         return this.store.removeEntity(e)
-        // if (e.id in this.#lookup) {
-        //     let cell = this.#lookup[e.id];
+        // if (e.id in this._lookup) {
+        //     let cell = this._lookup[e.id];
         //     this.grid[cell.y][cell.x] = null;
-        //     this.#lookup[e.id] = null;
+        //     this._lookup[e.id] = null;
         //     return true;
         // }
         // return false;
