@@ -5,6 +5,19 @@ const o = "OTHER"
 const i = "PICKUP"
 //7x7
 const levels = [
+
+    {
+        "name": "luke",
+        "grid": [
+            [e,e,e,e,e,e,e],
+            [e,w,e,e,w,e,e],
+            [e,p,e,w,e,e,e],
+            [e,e,e,e,e,e,e],
+            [e,e,e,w,e,e,w],
+            [w,e,e,e,e,e,e],
+            [e,e,e,e,o,e,e],
+        ]
+    },
     {
         "name": "cross-med",
         "grid": [
