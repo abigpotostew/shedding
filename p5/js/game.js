@@ -1,32 +1,32 @@
 class Game {
 
-    #config = null;
-    #sketch = null;
-    #state = Game.STATE_IDLE;
-    #prevState = Game.STATE_IDLE;
-    #grid = Grid;
-    #player = null;
-    #other = null;
-    #walls = [];
-    #pickups = [];
-    #numPickupsRunning = 0;
-    #nextPickupGameTime = 0;
-    #gameStepCounter = 0;
+    _config = null;
+    _sketch = null;
+    _state = Game.STATE_IDLE;
+    _prevState = Game.STATE_IDLE;
+    _grid = Grid;
+    _player = null;
+    _other = null;
+    _walls = [];
+    _pickups = [];
+    _numPickupsRunning = 0;
+    _nextPickupGameTime = 0;
+    _gameStepCounter = 0;
 
 
-    #blockingAnimations = []
-    #addBlockingAnimations = []
-    #nonBlockingAnimations = []
+    _blockingAnimations = []
+    _addBlockingAnimations = []
+    _nonBlockingAnimations = []
 
-    #pickupImageNames = []
+    _pickupImageNames = []
 
-    #keysPressed=[]
+    _keysPressed=[]
 
     constructor(sketch, config) {
-        this.#sketch = sketch
-        this.#config = config
-        this.#pickupImageNames = config.assetManager.pickupImageNames();
-        this.#pickups = []
+        this._sketch = sketch
+        this._config = config
+        this._pickupImageNames = config.assetManager.pickupImageNames();
+        this._pickups = []
 
         this.load(sketch)
     }
@@ -36,38 +36,38 @@ class Game {
         if (loadLevels) {
             this.loadLevel(0,sketch)
         }else{
-            this.#grid = new Grid(sketch.createVector(3, 50), config.cellCountX, config.cellCountY, sketch)
-            this.#player = EFactory.createPlayer(sketch.createVector(sketch.width / 2 - 100, sketch.height / 2))
-            this.#other = EFactory.createOther(sketch.createVector(sketch.width / 2 + 100, sketch.height / 2))
-            this.#grid.setEntity(Math.floor(this.#config.cellCountX / 2) - 1, Math.floor(this.#config.cellCountY / 2), this.#player)
-            this.#grid.setEntity(Math.floor(this.#config.cellCountX / 2) + 1, Math.floor(this.#config.cellCountY / 2), this.#other)
-            this.#walls = this.#grid.initWalls(sketch)
+            this._grid = new Grid(sketch.createVector(3, 50), config.cellCountX, config.cellCountY, sketch)
+            this._player = EFactory.createPlayer(sketch.createVector(sketch.width / 2 - 100, sketch.height / 2))
+            this._other = EFactory.createOther(sketch.createVector(sketch.width / 2 + 100, sketch.height / 2))
+            this._grid.setEntity(Math.floor(this._config.cellCountX / 2) - 1, Math.floor(this._config.cellCountY / 2), this._player)
+            this._grid.setEntity(Math.floor(this._config.cellCountX / 2) + 1, Math.floor(this._config.cellCountY / 2), this._other)
+            this._walls = this._grid.initWalls(sketch)
             this.addPickup(sketch)
         }
     }
 
     loadLevel(idx,sketch){
-        this.#grid = new Grid(sketch.createVector(3, 50), this.#config.cellCountX, this.#config.cellCountY, sketch)
+        this._grid = new Grid(sketch.createVector(3, 50), this._config.cellCountX, this._config.cellCountY, sketch)
 
-        let level = this.#config.levels[idx]
+        let level = this._config.levels[idx]
         console.log("loading level:", level.name)
         let levelGrid = level.grid
-        for(var y=0;y<this.#grid.store.sizeY; y++){
-            for(var x=0;x<this.#grid.store.sizeY; x++){
+        for(var y=0;y<this._grid.store.sizeY; y++){
+            for(var x=0;x<this._grid.store.sizeY; x++){
                 let dataE = levelGrid[y][x]
                 let e = null
                 if (dataE===GameData.TYPE_PLAYER){
                     e=EFactory.createPlayer(sketch.createVector(0,0))
-                    this.#player=e
+                    this._player=e
                 }else if (dataE===GameData.TYPE_OTHER){
                     e=EFactory.createOther(sketch.createVector(0,0))
-                    this.#other=e
+                    this._other=e
                 }else if(dataE===GameData.TYPE_WALL){
                     e=EFactory.createWall(sketch.createVector())
-                    this.#walls.push(e)
+                    this._walls.push(e)
                 }
                 if(e!=null) {
-                    this.#grid.setEntity(x, y, e)
+                    this._grid.setEntity(x, y, e)
                 }
             }
         }
@@ -79,35 +79,35 @@ class Game {
 
     update(ctx) {
 
-        if (this.#blockingAnimations.length > 0) {
-            this.#state = Game.STATE_ANIMATING
+        if (this._blockingAnimations.length > 0) {
+            this._state = Game.STATE_ANIMATING
         } else {
-            this.#state = Game.STATE_IDLE
+            this._state = Game.STATE_IDLE
         }
 
-        if (this.#nonBlockingAnimations.length > 0) {
-            for (var i = this.#nonBlockingAnimations.length - 1; i >= 0; i--) {
-                let a = this.#nonBlockingAnimations[i]
+        if (this._nonBlockingAnimations.length > 0) {
+            for (var i = this._nonBlockingAnimations.length - 1; i >= 0; i--) {
+                let a = this._nonBlockingAnimations[i]
                 if (a(ctx)) {
-                    this.#nonBlockingAnimations.splice(i, 1)
+                    this._nonBlockingAnimations.splice(i, 1)
                 }
             }
         }
 
-        if (this.#state === Game.STATE_ANIMATING) {
-            for (var i = this.#blockingAnimations.length - 1; i >= 0; i--) {
-                let a = this.#blockingAnimations[i]
+        if (this._state === Game.STATE_ANIMATING) {
+            for (var i = this._blockingAnimations.length - 1; i >= 0; i--) {
+                let a = this._blockingAnimations[i]
                 if (a(ctx)) {
-                    this.#blockingAnimations.splice(i, 1)
+                    this._blockingAnimations.splice(i, 1)
                 }
             }
-            this.#addBlockingAnimations.forEach(element => this.#blockingAnimations.push(element));
-            this.#addBlockingAnimations = [];
+            this._addBlockingAnimations.forEach(element => this._blockingAnimations.push(element));
+            this._addBlockingAnimations = [];
         }
 
-        if (this.#state === Game.STATE_IDLE && this.#keysPressed.length>0) {
+        if (this._state === Game.STATE_IDLE && this._keysPressed.length>0) {
             let dir = null
-            let key = this.#keysPressed[this.#keysPressed.length-1]
+            let key = this._keysPressed[this._keysPressed.length-1]
             if (key == Game.ACTION_LEFT) {
                 dir = ctx.sketch.createVector(-1, 0)
             }
@@ -121,22 +121,22 @@ class Game {
                 dir = ctx.sketch.createVector(0, 1)
             }
             if (dir != null) {
-                this.doMovement(ctx, dir, this.#player)
-                this.doMovement(ctx, dir.copy().mult(-1), this.#other)
+                this.doMovement(ctx, dir, this._player)
+                this.doMovement(ctx, dir.copy().mult(-1), this._other)
             }
             this.pickupNeighbors(ctx)
 
-            if (this.#gameStepCounter == this.#nextPickupGameTime) {
-                this.addPickupDelay(ctx, this.#other.physics.pos)
+            if (this._gameStepCounter == this._nextPickupGameTime) {
+                this.addPickupDelay(ctx, this._other.physics.pos)
             }
-            this.#gameStepCounter++;
+            this._gameStepCounter++;
         }
-        this.#prevState = this.#state
+        this._prevState = this._state
     }
 
     pickupNeighbors(ctx) {
-        let pNeighbors = this.#grid.findNeighborsEntity(this.#player);
-        let oNeighbors = this.#grid.findNeighborsEntity(this.#other);
+        let pNeighbors = this._grid.findNeighborsEntity(this._player);
+        let oNeighbors = this._grid.findNeighborsEntity(this._other);
         if (pNeighbors.length === 0 || oNeighbors.length === 0) {
             //done
             return;
@@ -145,9 +145,9 @@ class Game {
             let pn = pNeighbors[i]
             if (oNeighbors.includes(pn)) {
                 if (pn.id.startsWith(GameData.TYPE_PICKUP)) {
-                    this.#grid.removeEntity(pn);
-                    // this.#pickups.remove(pn);
-                    this.removeItemOnce(this.#pickups, pn)
+                    this._grid.removeEntity(pn);
+                    // this._pickups.remove(pn);
+                    this.removeItemOnce(this._pickups, pn)
                 }
             }
         }
@@ -174,19 +174,19 @@ class Game {
     }
 
     doMovement(ctx, dir, e) {
-        if (this.#grid.canMove(dir, e)) {
+        if (this._grid.canMove(dir, e)) {
             // console.log("can move")
-            let endPos = this.#grid.worldPosOffset(dir, e)
-            this.#grid.moveEntityCell(dir, e)
-            this.lerp(ctx, e, e.physics.pos, endPos, 0.25, null, this.#blockingAnimations)
+            let endPos = this._grid.worldPosOffset(dir, e)
+            this._grid.moveEntityCell(dir, e)
+            this.lerp(ctx, e, e.physics.pos, endPos, 0.25, null, this._blockingAnimations)
         } else {
             //blocking ani
             let startPos = e.physics.pos
-            let endPos = e.physics.pos.add(dir.copy().mult(0.25 * this.#grid.cellSize))//todo
+            let endPos = e.physics.pos.add(dir.copy().mult(0.25 * this._grid.cellSize))//todo
             let egrid = this
             this.lerp(ctx, e, startPos, endPos, 0.12, function (ctx1, e) {
-                egrid.lerp(ctx1, e, e.physics.pos, startPos, 0.12, null, egrid.#addBlockingAnimations)
-            }, this.#blockingAnimations)
+                egrid.lerp(ctx1, e, e.physics.pos, startPos, 0.12, null, egrid._addBlockingAnimations)
+            }, this._blockingAnimations)
         }
     }
 
@@ -216,23 +216,23 @@ class Game {
 
     keyPressed(e) {
         if (e.key in Game.ACTIONS) {
-            this.#keysPressed.push(e.key)
+            this._keysPressed.push(e.key)
         }
     }
 
     keyReleased(e) {
-        this.removeItemAll(this.#keysPressed, e.key)
+        this.removeItemAll(this._keysPressed, e.key)
     }
 
     draw(ctx) {
-        this.drawEntity(ctx, this.#grid)
-        this.drawEntity(ctx, this.#player)
-        this.drawEntity(ctx, this.#other)
-        for (var i = 0; i < this.#walls.length; i++) {
-            this.drawEntity(ctx, this.#walls[i]);
+        this.drawEntity(ctx, this._grid)
+        this.drawEntity(ctx, this._player)
+        this.drawEntity(ctx, this._other)
+        for (var i = 0; i < this._walls.length; i++) {
+            this.drawEntity(ctx, this._walls[i]);
         }
-        for (var i = 0; i < this.#pickups.length; i++) {
-            this.drawEntity(ctx, this.#pickups[i]);
+        for (var i = 0; i < this._pickups.length; i++) {
+            this.drawEntity(ctx, this._pickups[i]);
         }
 
         //debug draw
@@ -244,15 +244,15 @@ class Game {
 
     debugMiddleDot(ctx) {
         ctx.sketch.fill(255);
-        let sub = this.#other.physics.pos.sub(this.#player.physics.pos)
-        sub = sub.mult(0.5).add(this.#player.physics.pos);
+        let sub = this._other.physics.pos.sub(this._player.physics.pos)
+        sub = sub.mult(0.5).add(this._player.physics.pos);
         ctx.sketch.ellipse(sub.x, sub.y, 5, 5);
     }
 
     stateText() {
-        if (this.#state === Game.STATE_IDLE) {
+        if (this._state === Game.STATE_IDLE) {
             return "idle"
-        } else if (this.#state === Game.STATE_ANIMATING) {
+        } else if (this._state === Game.STATE_ANIMATING) {
             return "animating"
         }
         return "invalid state"
@@ -264,33 +264,33 @@ class Game {
     }
 
     addPickupDelay(ctx, startPos) {
-        this.#numPickupsRunning++;
-        let imageName = this.#pickupImageNames[this.#numPickupsRunning % this.#pickupImageNames.length];
-        let image = this.#config.assetManager.getImage(imageName)
+        this._numPickupsRunning++;
+        let imageName = this._pickupImageNames[this._numPickupsRunning % this._pickupImageNames.length];
+        let image = this._config.assetManager.getImage(imageName)
 
-        let pickup = EFactory.createPickup(startPos, this.#grid.cellSize, image)
-        // let pickup = this.#grid.addPickup(new Context(sketch), image)
-        this.#pickups.push(pickup)
+        let pickup = EFactory.createPickup(startPos, this._grid.cellSize, image)
+        // let pickup = this._grid.addPickup(new Context(sketch), image)
+        this._pickups.push(pickup)
 
-        let res = this.#grid.randomEmptyCellAndWorldPos(ctx)
+        let res = this._grid.randomEmptyCellAndWorldPos(ctx)
         let cell = res[0]
         let pos = res[1]
         let thisGame = this
         // console.log("start:",ctx.gameTime)
         this.lerp(ctx, pickup, startPos, pos, 1.05, function(ctx, e){
-            thisGame.#grid.setEntity(cell.x, cell.y, e)
+            thisGame._grid.setEntity(cell.x, cell.y, e)
             // console.log("end:",ctx.gameTime)
-        }, this.#nonBlockingAnimations)
+        }, this._nonBlockingAnimations)
 
-        this.#nextPickupGameTime = this.#gameStepCounter + 15
+        this._nextPickupGameTime = this._gameStepCounter + 15
     }
     addPickup(sketch) {
-        this.#numPickupsRunning++;
-        let imageName = this.#pickupImageNames[this.#numPickupsRunning % this.#pickupImageNames.length];
-        let image = this.#config.assetManager.getImage(imageName)
-        let pickup = this.#grid.addPickup(new Context(sketch), image)
-        this.#pickups.push(pickup)
-        this.#nextPickupGameTime = this.#gameStepCounter + 15
+        this._numPickupsRunning++;
+        let imageName = this._pickupImageNames[this._numPickupsRunning % this._pickupImageNames.length];
+        let image = this._config.assetManager.getImage(imageName)
+        let pickup = this._grid.addPickup(new Context(sketch), image)
+        this._pickups.push(pickup)
+        this._nextPickupGameTime = this._gameStepCounter + 15
     }
 }
 

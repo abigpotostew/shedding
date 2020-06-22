@@ -1,118 +1,118 @@
 class GameConfig {
 
-    #cellCountX = 0
-    #cellCountY = 0
-    #assetManager = null
-    #_levels = []
+    _cellCountX = 0
+    _cellCountY = 0
+    _assetManager = null
+    _levels = []
 
     constructor() {
 
     }
 
     get cellCountX() {
-        return this.#cellCountX;
+        return this._cellCountX;
     }
 
     set cellCountX(cellCountXIN) {
-        this.#cellCountX = Math.floor(cellCountXIN);
+        this._cellCountX = Math.floor(cellCountXIN);
     }
 
     get cellCountY() {
-        return this.#cellCountY;
+        return this._cellCountY;
     }
 
     set cellCountY(cellCountYIN) {
-        this.#cellCountY = Math.floor(cellCountYIN);
+        this._cellCountY = Math.floor(cellCountYIN);
     }
 
     get assetManager() {
-        return this.#assetManager;
+        return this._assetManager;
     }
 
     set assetManager(value) {
-        this.#assetManager = value;
+        this._assetManager = value;
     }
 
 
     get levels() {
-        return this.#_levels;
+        return this._levels;
     }
 
     set levels(value) {
-        this.#_levels = value;
+        this._levels = value;
     }
 }
 
 
 class Context {
-    #dt = 0;
-    #sketch = null;
-    #gameTime = 0;
+    _dt = 0;
+    _sketch = null;
+    _gameTime = 0;
 
     constructor(sketch, dt, gameTime) {
-        this.#sketch = sketch;
-        this.#dt = dt
-        this.#gameTime = gameTime;
+        this._sketch = sketch;
+        this._dt = dt
+        this._gameTime = gameTime;
     }
 
     get sketch() {
-        return this.#sketch;
+        return this._sketch;
     }
 
     get dt() {
-        return this.#dt;
+        return this._dt;
     }
 
     get gameTime() {
-        return this.#gameTime;
+        return this._gameTime;
     }
 }
 
 class Entity {
 
-    #ePhysics = null
-    #eSprite = null
-    #eId = null;
+    ePhysics = null
+    eSprite = null
+    eId = null;
 
     constructor(physics, id, sprite) {
-        this.#ePhysics = physics;
-        this.#eId = id;
-        this.#eSprite = sprite;
+        this.ePhysics = physics;
+        this.eId = id;
+        this.eSprite = sprite;
     }
 
     get physics() {
-        return this.#ePhysics;
+        return this.ePhysics;
     }
 
     get sprite() {
-        return this.#eSprite;
+        return this.eSprite;
     }
 
     get id() {
-        return this.#eId;
+        return this.eId;
     }
 
 }
 
 class Physics {
 
-    #position = new p5.Vector()
+    _position = new p5.Vector()
 
 
     constructor(position) {
-        this.#position = position;
+        this._position = position;
     }
 
     get pos() {
-        return this.#position.copy()
+        return this._position.copy()
     }
 
     get pos() {
-        return this.#position.copy()
+        return this._position.copy()
     }
 
     set pos(inPos) {
-        this.#position.set(inPos)
+        this._position.set(inPos)
     }
 }
 
@@ -132,42 +132,42 @@ class IdUtils {
 }
 
 class Cell {
-    #x = 0
-    #y = 0
+    _x = 0
+    _y = 0
 
     constructor(x, y) {
-        this.#x = x;
-        this.#y = y;
+        this._x = x;
+        this._y = y;
     }
 
     get x() {
-        return this.#x;
+        return this._x;
     }
 
     get y() {
-        return this.#y;
+        return this._y;
     }
 }
 
 class AssetManager {
-    #imageNames = ["hulk.png", "boyscouts.png", "eye.png", "fire.png",
+    _imageNames = ["hulk.png", "boyscouts.png", "eye.png", "fire.png",
         "happy.png", "lips.png", "molar.png", "nose.png", "rollerblade.png", "sad.png", "tent.png", "triforce.png"]
-    #images = {}
+    _images = {}
 
     load(sketch) {
-        for (var i = 0; i < this.#imageNames.length; i++) {
-            let imageName = this.#imageNames[i]
+        for (var i = 0; i < this._imageNames.length; i++) {
+            let imageName = this._imageNames[i]
             let imagePath = "assets/" + imageName
-            this.#images[imageName] = sketch.loadImage(imagePath)
+            this._images[imageName] = sketch.loadImage(imagePath)
             // console.log("loaded ", imagePath)
         }
     }
 
     getImage(name) {
-        return this.#images[name]
+        return this._images[name]
     }
 
     pickupImageNames() {
-        return this.#imageNames
+        return this._imageNames
     }
 }
