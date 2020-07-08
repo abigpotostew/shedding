@@ -54,7 +54,6 @@ class Level{
 
     }
 
-
     doMovement(ctx, dir, e) {
         if (this._grid.canMove(dir, e)) {
             // console.log("can move")
