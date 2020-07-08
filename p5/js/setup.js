@@ -171,3 +171,9 @@ class AssetManager {
         return this._imageNames
     }
 }
+
+class StepUpdate {
+
+    step(ctx, stepCounter){
+    }
+}

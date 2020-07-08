@@ -55,14 +55,15 @@ class EntityStore {
             throw new Error("out of bounds");
         }
         let bucket = this.items[y * this.sizeY + x]
-        return bucket != null && bucket.length > 0
+        return bucket != null && Object.keys(bucket).length > 0
     }
 
 
     contains(entity) {
         return entity.id in this.lookupByItem
-
     }
+
+
 
     findEntity(entity) {
         return this.lookupByItem[entity.id]
@@ -171,21 +172,11 @@ class Grid extends Entity {
     }
 
     setEntityNoPos(x, y, e) {
-        // this.removeEntity(e)
-        // this.grid[y][x] = e;
-        // this._lookup[e.id] = new Cell(x, y);
         this.store.putEntity(x, y, e)
     }
 
     removeEntity(e) {
         return this.store.removeEntity(e)
-        // if (e.id in this._lookup) {
-        //     let cell = this._lookup[e.id];
-        //     this.grid[cell.y][cell.x] = null;
-        //     this._lookup[e.id] = null;
-        //     return true;
-        // }
-        // return false;
     }
 
     setEntityRandom(ctx, e) {
@@ -210,6 +201,16 @@ class Grid extends Entity {
         let pickup = EFactory.createPickup(ctx.sketch.createVector(), this.cellSize, image)
         this.setEntityRandom(ctx, pickup)
         return pickup
+    }
+
+
+
+    getCellPosition(e) {
+        if (!this.store.contains(e)) {
+            return [];
+        }
+        let cell = this.store.findEntity(e)
+        return cell
     }
 
     findNeighborsEntity(e) {
@@ -241,20 +242,13 @@ class Grid extends Entity {
     }
 
     getEntity(x, y) {
-
         return this.store.findAt(x,y)
-        // return this.grid[y][x];
     }
 
     get sprite() {
         let egrid = this;
         return {
             draw: function (ctx, physics) {
-                // ctx.sketch.fill(255);
-                // ctx.sketch.rectMode(ctx.sketch.CENTER);
-                // ctx.sketch.rect(0,0,100,100);
-
-
                 for (var y = 0; y < egrid.store.sizeY; y += 1) {
                     for (var x = 0; x < egrid.store.sizeX; x += 1) {
                         ctx.sketch.rectMode(ctx.sketch.CENTER);

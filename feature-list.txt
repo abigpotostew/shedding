@@ -18,6 +18,8 @@ TODOs:
 - tutorial on how to play!? maybe not needed really
 - player or ry is not blocked by spawns
     - ry not blocked-in progress, need to make the grid support multiple things
+- level progression where pickups spawn in controlled way.
+- don't spawn pickups during tutorials
 
 visuals
 - ry character gets more fuzzy or hectic as more memories on ground
