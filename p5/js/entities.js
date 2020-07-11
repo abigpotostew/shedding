@@ -37,7 +37,7 @@ class EntityStore {
 
     findAt(x, y) {
         if (!this.inBounds(x, y)) {
-            throw new Error("out of bounds: "+x+", "+y);
+            throw new Error("out of bounds: " + x + ", " + y);
         }
         let bucket = this.items[y * this.sizeY + x]
         let output = []
@@ -63,7 +63,16 @@ class EntityStore {
         return entity.id in this.lookupByItem
     }
 
-
+    numEntityOfType(list, typeName) {
+        let count = 0
+        for (var i = 0; i < list.length; i++) {
+            let e = list[i]
+            if (e.id.startsWith(typeName)) {
+                count++
+            }
+        }
+        return count
+    }
 
     findEntity(entity) {
         return this.lookupByItem[entity.id]
@@ -81,6 +90,133 @@ class EntityStore {
             return false
         }
         return true
+    }
+
+    path(sx, sy, dx, dy) {
+        const goalNode = new PathNode(new Cell(dx, dy), this.sizeY, 0, 0)
+        const sizeY = this.sizeY
+        const store = this
+
+        function newNode(x, y, h, g, addTo) {
+            let node = new PathNode(new Cell(x, y), sizeY, h, g)
+            if (addTo) {
+                addTo[node.index] = node
+            }
+            return node
+        }
+
+        function leastCost(nodeDict) {
+            let keys = Object.keys(nodeDict)
+            let lowest = new PathNode(new Cell(0, 0), sizeY, 0, Number.MAX_VALUE)
+            for (var i = 0; i < keys.length; ++i) {
+                let curr = nodeDict[keys[i]]
+                if (curr.cost < lowest.cost) {
+                    lowest = curr
+                }
+            }
+            return lowest
+        }
+
+        function openNeighbors(startx, starty) {
+            if (!store.inBounds(startx, starty)) {
+                return []
+            }
+            let out = []
+            for (var x = -1; x <= 1; x+=1) {
+                for (var y = -1; y <= 1; y++) {
+                    if (x === y || !store.inBounds(x + startx, y + starty)) {
+                        continue;
+                    }
+                    let entities = store.findAt(x + startx, y + starty);
+                    //todo collisions here rather than type
+                    if (entities.length !== 0 && store.numEntityOfType(entities, GameData.TYPE_WALL) > 0) {
+                        // can't move through a wall :)
+                        continue;
+                    }
+                    out.push(new Cell(x + startx, y + starty))
+                }
+            }
+            return out;
+        }
+
+        // dictionary, key == coord y*sizeY+x, value == Node
+        let openList = {}
+        let closeList = {}
+
+        newNode(sx, sy, 0, 0, openList)
+
+        while (Object.keys(openList).length > 0) {
+            let currentNode = leastCost(openList)
+            delete openList[currentNode.index]
+            closeList[currentNode.index] = currentNode
+
+            if (currentNode.index == goalNode.index) {
+                let path = []
+                let current = currentNode
+                while (current) {
+                    path.push(current.value)
+                    current = current.parent
+                }
+                return path.reverse()
+            }
+
+            let children = openNeighbors(currentNode.value.x, currentNode.value.y)
+
+            let parentNode = currentNode
+            children.forEach(function (childCell) {
+                let x = childCell.x
+                let y = childCell.y
+                if (closeList[y * sizeY + x]) {
+                    return;
+                }
+
+                // heuristic is euclidean distance for now. better use manhattan distance.
+                let h = Math.sqrt(Math.pow(dx - x, 2) + Math.pow(dy - y, 2))
+                h = Math.ceil(h)
+
+                let child = newNode(x, y, h, parentNode.g + 1)
+                child.parent = parentNode
+                if (openList[child.index]) {
+                    // calc g cost
+                    let existing = openList[child.index]
+                    if (child.g < existing.g) {
+                        existing.parent = parentNode
+                        existing.g = child.g
+                        existing.cost = existing.h + existing.g
+                    }
+                    child = existing
+                }
+                openList[child.index] = child
+            })
+        }
+        //can't find a path
+        return null;
+    }
+}
+
+class PathNode {
+    _value = new Cell()
+    _idx = -1
+    //f
+    cost = Number.MAX_VALUE
+    h = Number.MAX_VALUE
+    g = Number.MAX_VALUE
+    parent = null
+
+    constructor(cell, sizeY, h, g) {
+        this._value = cell;
+        this._idx = cell.y * sizeY + cell.x
+        this.h = h
+        this.g = g
+        this.cost = h + g
+    }
+
+    get index() {
+        return this._idx;
+    }
+
+    get value() {
+        return this._value;
     }
 }
 
@@ -116,10 +252,10 @@ class Grid extends Entity {
         let cell = this.store.findEntity(e);
         let nx = cell.x + dx;
         let ny = cell.y + dy;
-        if (!this.store.inBounds(nx,ny)){
+        if (!this.store.inBounds(nx, ny)) {
             return false
         }
-        let targetEntities = this.store.findAt(nx,ny);
+        let targetEntities = this.store.findAt(nx, ny);
         return targetEntities.length === 0;
     }
 
@@ -155,7 +291,7 @@ class Grid extends Entity {
         for (var y = 0; y < egrid.store.sizeY; y += 1) {
             for (var x = 0; x < egrid.store.sizeX; x += 1) {
 
-                if (egrid.store.inBounds(x,y) && sketch.random(1) > 0.9 && egrid.store.findAt(x,y).length === 0) {
+                if (egrid.store.inBounds(x, y) && sketch.random(1) > 0.9 && egrid.store.findAt(x, y).length === 0) {
                     let wall = EFactory.createWall(sketch.createVector())
                     walls.push(wall);
 
@@ -204,7 +340,6 @@ class Grid extends Entity {
     }
 
 
-
     getCellPosition(e) {
         if (!this.store.contains(e)) {
             return [];
@@ -228,7 +363,7 @@ class Grid extends Entity {
         let out = []
         for (var x = -1; x <= 1; x++) {
             for (var y = -1; y <= 1; y++) {
-                if (x === 0 && y === 0 || !this.store.inBounds(x + startx,y+ starty)) {
+                if (x === 0 && y === 0 || !this.store.inBounds(x + startx, y + starty)) {
                     continue;
                 }
                 let entities = this.store.findAt(x + startx, y + starty);
@@ -242,7 +377,7 @@ class Grid extends Entity {
     }
 
     getEntity(x, y) {
-        return this.store.findAt(x,y)
+        return this.store.findAt(x, y)
     }
 
     get sprite() {
@@ -260,7 +395,7 @@ class Grid extends Entity {
 
                         let countPickups = 0
                         let entities = egrid.getEntity(x, y)
-                        if ( egrid.numEntityOfType(entities, GameData.TYPE_PICKUP) >0) {
+                        if (egrid.numEntityOfType(entities, GameData.TYPE_PICKUP) > 0) {
                             countPickups = 1
                         }
 

@@ -4,9 +4,45 @@ const p = "PLAYER";
 const o = "OTHER"
 const i = "PICKUP"
 const DEF_SPAWN_RATE=15;
+
+const VAR="VAR"
+const VALUE="VALUE"
+const VAR_NUM_PICKUPS="numPickedUp"
+
+const COND="COND"
+const COND_EQ="EQ"
+
 //7x7
 const levels = [
 
+    {
+        "name": "path-test-hard",
+        "grid": [
+            [p,e,w,e,o,w,w],
+            [w,e,e,e,w,w,w],
+            [w,w,i,w,w,w,w],
+            [w,w,w,w,w,w,w],
+            [w,w,w,w,w,w,w],
+            [w,w,w,w,w,w,w],
+            [w,w,w,w,w,w,w],
+        ],
+        "nextLevel":"tutorial1",
+        "winCondition": {[VAR]:VAR_NUM_PICKUPS,[COND]:COND_EQ,[VALUE]:1},
+    },
+    {
+        "name": "path-test-curve",
+        "grid": [
+            [p,e,w,w,w,w,w],
+            [w,e,w,w,w,w,w],
+            [w,o,i,w,w,w,w],
+            [w,w,w,w,w,w,w],
+            [w,w,w,w,w,w,w],
+            [w,w,w,w,w,w,w],
+            [w,w,w,w,w,w,w],
+        ],
+        "nextLevel":"tutorial1",
+        "winCondition": {[VAR]:VAR_NUM_PICKUPS,[COND]:COND_EQ,[VALUE]:1},
+    },
     {
         "name": "tutorial2",
         "grid": [
@@ -17,7 +53,9 @@ const levels = [
             [w,w,e,e,e,w,w],
             [w,w,i,w,w,w,w],
             [w,w,w,w,w,w,w],
-        ]
+        ],
+        "nextLevel":"tutorial1",
+        "winCondition": {[VAR]:VAR_NUM_PICKUPS,[COND]:COND_EQ,[VALUE]:1},
     },
     {
         "name": "tutorial1",
@@ -105,3 +143,9 @@ GameData.TYPE_WALL=w
 GameData.TYPE_PLAYER=p
 GameData.TYPE_OTHER=o
 GameData.TYPE_PICKUP=i
+
+GameData.VAR="VAR"
+GameData.COND_EQ="EQ"
+GameData.VAR_NUM_PICKUPS=VAR_NUM_PICKUPS
+GameData.VALUE=VALUE
+GameData.COND=COND

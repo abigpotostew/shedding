@@ -33,6 +33,7 @@ class Game {
     _walls = [];
     _pickups = [];
     _numPickupsRunning = 0;
+
     _nextPickupGameTime = 0;
     _gameStepCounter = 0;
 
@@ -47,7 +48,9 @@ class Game {
 
 
     _level = {
-        stepUpdaters:[]
+        stepUpdaters:[],
+        winCondition:{},
+        numPickedUp: 0,
     }
 
 
@@ -76,6 +79,12 @@ class Game {
     }
 
     loadLevel(idx, sketch) {
+        this._level={
+            stepUpdaters:[],
+            winCondition:{},
+            numPickedUp: 0,
+        }
+
         this._gameStepCounter=0
         this._nextPickupGameTime=0
         this._numPickupsRunning=0
@@ -110,6 +119,15 @@ class Game {
         if (level.spawnRate && level.spawnRate>0){
             this._level.stepUpdaters.push(new StepSpawner(level.spawnRate, this))
         }
+
+        if (level.winCondition){
+            this._level.winCondition = new ConditionInterpreter().parse(level.winCondition)
+        }
+
+        let start = this._grid.getCellPosition(this._player)
+        let end = this._grid.getCellPosition(this._other)
+        let path = this._grid.store.path(start.x, start.y, end.x, end.y)
+        console.log(path)
     }
 
     update(ctx) {
@@ -166,8 +184,22 @@ class Game {
                 let su = this._level.stepUpdaters[i];
                 su.step(ctx, this._gameStepCounter)
             }
+
+            if (this._level.winCondition) {
+                let varCtx = this.buildGameContext()
+                if (this._level.winCondition.evaluate(varCtx)){
+                    console.log("win")
+                    //change level
+                    //cancel animations
+                    this.loadLevel(1, ctx.sketch)
+                }
+            }
         }
         this._prevState = this._state
+    }
+
+    buildGameContext(){
+        return {"numPickedUp":this._level.numPickedUp}
     }
 
     pickupNeighbors(ctx) {
@@ -182,8 +214,8 @@ class Game {
             if (oNeighbors.includes(pn)) {
                 if (pn.id.startsWith(GameData.TYPE_PICKUP)) {
                     this._grid.removeEntity(pn);
-                    // this._pickups.remove(pn);
                     this.removeItemOnce(this._pickups, pn)
+                    this._level.numPickedUp++;
                 }
             }
         }
