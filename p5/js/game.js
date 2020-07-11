@@ -194,7 +194,7 @@ class Game {
             let playerLast = playerPath[playerPath.length-2]
 
 
-            let pickupNeighbors = this._grid.store.openNeighbors(other.x, other.y, [GameData.TYPE_WALL, GameData.TYPE_PICKUP])
+            let pickupNeighbors = this._grid.store.openNeighbors(pickup.x, pickup.y, [GameData.TYPE_WALL, GameData.TYPE_PICKUP])
             let otherEnsured = false
             for (var j=0;j<pickupNeighbors.length; ++j){
                 let nei = pickupNeighbors[j]
