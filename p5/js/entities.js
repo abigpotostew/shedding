@@ -92,6 +92,38 @@ class EntityStore {
         return true
     }
 
+    openNeighbors(startx, starty, closedTypes) {
+        if (!this.inBounds(startx, starty)) {
+            return []
+        }
+        let out = []
+        for (var x = -1; x <= 1; x+=1) {
+            for (var y = -1; y <= 1; y++) {
+                if (x === y || !this.inBounds(x + startx, y + starty)) {
+                    continue;
+                }
+                let entities = this.findAt(x + startx, y + starty);
+                //todo collisions here rather than type
+                if (entities.length !== 0 && closedTypes) {
+                    let isClosed = false
+                    for (var i=0;i<closedTypes.length;++i){
+
+                        // can't move through a wall :)
+                        if (this.numEntityOfType(entities, closedTypes[i]) > 0){
+                            isClosed= true
+                            break;
+                        }
+                    }
+                    if (isClosed) {
+                        continue;
+                    }
+                }
+                out.push(new Cell(x + startx, y + starty))
+            }
+        }
+        return out;
+    }
+
     path(sx, sy, dx, dy) {
         const goalNode = new PathNode(new Cell(dx, dy), this.sizeY, 0, 0)
         const sizeY = this.sizeY
@@ -117,28 +149,6 @@ class EntityStore {
             return lowest
         }
 
-        function openNeighbors(startx, starty) {
-            if (!store.inBounds(startx, starty)) {
-                return []
-            }
-            let out = []
-            for (var x = -1; x <= 1; x+=1) {
-                for (var y = -1; y <= 1; y++) {
-                    if (x === y || !store.inBounds(x + startx, y + starty)) {
-                        continue;
-                    }
-                    let entities = store.findAt(x + startx, y + starty);
-                    //todo collisions here rather than type
-                    if (entities.length !== 0 && store.numEntityOfType(entities, GameData.TYPE_WALL) > 0) {
-                        // can't move through a wall :)
-                        continue;
-                    }
-                    out.push(new Cell(x + startx, y + starty))
-                }
-            }
-            return out;
-        }
-
         // dictionary, key == coord y*sizeY+x, value == Node
         let openList = {}
         let closeList = {}
@@ -160,7 +170,7 @@ class EntityStore {
                 return path.reverse()
             }
 
-            let children = openNeighbors(currentNode.value.x, currentNode.value.y)
+            let children = store.openNeighbors(currentNode.value.x, currentNode.value.y, [GameData.TYPE_WALL])
 
             let parentNode = currentNode
             children.forEach(function (childCell) {

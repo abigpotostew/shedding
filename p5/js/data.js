@@ -16,6 +16,19 @@ const COND_EQ="EQ"
 const levels = [
 
     {
+        "name": "luke",
+        "grid": [
+            [e,e,e,e,e,e,e],
+            [e,w,e,e,e,w,e],
+            [e,p,e,w,e,e,e],
+            [e,e,e,e,e,i,e],
+            [e,e,e,w,e,e,w],
+            [w,e,e,e,e,e,e],
+            [e,e,e,e,o,e,e],
+        ],
+        spawnRate: DEF_SPAWN_RATE,
+    },
+    {
         "name": "path-test-hard",
         "grid": [
             [p,e,w,e,o,w,w],
@@ -68,19 +81,6 @@ const levels = [
             [w,w,w,w,w,w,w],
             [w,w,w,w,w,w,w],
         ]
-    },
-    {
-        "name": "luke",
-        "grid": [
-            [e,e,e,e,e,e,e],
-            [e,w,e,e,e,w,e],
-            [e,p,e,w,e,e,e],
-            [e,e,e,e,e,e,e],
-            [e,e,e,w,e,e,w],
-            [w,e,e,e,e,e,e],
-            [e,e,e,e,o,e,e],
-        ],
-        spawnRate: DEF_SPAWN_RATE,
     },
     {
         "name": "cross-med",

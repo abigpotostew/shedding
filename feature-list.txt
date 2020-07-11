@@ -30,5 +30,8 @@ visuals
 other
 - [x] javascript
 
+level generation:
+- openNeighbors should implement collision. other cannot pass through a pickup
+
 bugs:
 - pickup spawn animation delays to show the grid coloring

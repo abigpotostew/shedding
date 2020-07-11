@@ -3,6 +3,7 @@ class StepSpawner extends StepUpdate{
     _spawnRate = 0;
     _nextPickupGameTime = 0;
     _game=null;
+    _numPickups=0;
 
 
     constructor(spawnRate, game) {
@@ -10,14 +11,23 @@ class StepSpawner extends StepUpdate{
         this._spawnRate=spawnRate;
         this._nextPickupGameTime = spawnRate;
         this._game=game;
+        this._numPickups = this._game._level.numPickedUp | 0
     }
 
     step(ctx, stepCounter){
-        if(stepCounter==this._nextPickupGameTime){
-            //spawn
-            this._game.addPickupDelay(ctx)
-            this._nextPickupGameTime = stepCounter+this._spawnRate;
+        // if number of pickups has changed
+        if (this._numPickups != this._game._level.numPickedUp) {
+            this.reset(stepCounter)
         }
+        if(stepCounter==this._nextPickupGameTime){
+            //move it!
+            this._game.movePickup()
+            this.reset(stepCounter)
+        }
+    }
+
+    reset(stepCounter){
+        this._nextPickupGameTime = stepCounter+this._spawnRate;
     }
 }
 
@@ -49,7 +59,7 @@ class Game {
 
     _level = {
         stepUpdaters:[],
-        winCondition:{},
+        winCondition:null,//object condition with evaluate func
         numPickedUp: 0,
     }
 
@@ -68,7 +78,7 @@ class Game {
         if (loadLevels) {
             this.loadLevel(0, sketch)
         } else {
-            this._grid = new Grid(sketch.createVector(3, 50), config.cellCountX, config.cellCountY, sketch)
+            this._grid = new Grid(sketch.createVector(3, 50), this._config.cellCountX, this._config.cellCountY, sketch)
             this._player = EFactory.createPlayer(sketch.createVector(sketch.width / 2 - 100, sketch.height / 2))
             this._other = EFactory.createOther(sketch.createVector(sketch.width / 2 + 100, sketch.height / 2))
             this._grid.setEntity(Math.floor(this._config.cellCountX / 2) - 1, Math.floor(this._config.cellCountY / 2), this._player)
@@ -81,7 +91,7 @@ class Game {
     loadLevel(idx, sketch) {
         this._level={
             stepUpdaters:[],
-            winCondition:{},
+            winCondition:null,
             numPickedUp: 0,
         }
 
@@ -124,10 +134,92 @@ class Game {
             this._level.winCondition = new ConditionInterpreter().parse(level.winCondition)
         }
 
+        this.loadRandomWalls()
+
         let start = this._grid.getCellPosition(this._player)
         let end = this._grid.getCellPosition(this._other)
         let path = this._grid.store.path(start.x, start.y, end.x, end.y)
         console.log(path)
+    }
+
+    loadRandomWalls(){
+        let grid = this._grid
+        this._walls.forEach(function (w) {
+            grid.removeEntity(w)
+        })
+        this._walls = []
+
+        let num = this._config.cellCountY * this._config.cellCountX;
+        for (var i =0;i<num; i++){
+            let x = i%this._config.cellCountY
+            let y = Math.floor(i/this._config.cellCountY)
+            if (grid.getEntity(x,y).length > 0 ){
+                continue;
+            }
+            if (this._sketch.random()>.8){
+                let e = EFactory.createWall(this._sketch.createVector())
+                this._grid.setEntity(x,y, e)
+                if (!this.ensurePaths()){
+                    this._grid.removeEntity(e)
+                    continue
+                }else{
+                    this._walls.push(e)
+                }
+            }
+        }
+    }
+
+    movePickup(){
+        let grid = this._grid
+
+        do {
+            this._pickups.forEach(function (e) {
+                grid.removeEntity(e)
+            })
+            this._pickups = []
+            this.addPickup(this._sketch)
+        }while(!this.ensurePaths())
+    }
+
+    ensurePaths(){
+        let player = this._grid.getCellPosition(this._player)
+        let other = this._grid.getCellPosition(this._other)
+
+        for (var i=0;i<this._pickups.length; i++){
+            let pickup = this._grid.getCellPosition(this._pickups[0])
+            let playerPath = this._grid.store.path(player.x, player.y, pickup.x, pickup.y)
+            if (playerPath===null){
+                return false
+            }
+            let playerLast = playerPath[playerPath.length-2]
+
+
+            let pickupNeighbors = this._grid.store.openNeighbors(other.x, other.y, [GameData.TYPE_WALL, GameData.TYPE_PICKUP])
+            let otherEnsured = false
+            for (var j=0;j<pickupNeighbors.length; ++j){
+                let nei = pickupNeighbors[j]
+                if (nei.x !== playerLast.x || nei.y !== playerLast.y){
+                    let otherPath = this._grid.store.path(other.x, other.y, nei.x, nei.y)
+                    if (otherPath != null ){
+                        otherEnsured = true
+                        break;
+                    }
+                }
+            }
+            if (!otherEnsured){
+                console.log("couldn't find path for other")
+                return false;
+            }
+
+            // player and other must take different paths to goal. really this should try to path to neighbors of pickup.
+
+            // let otherLast = otherPath[otherPath.length-2]
+            // if (playerLast.x === otherLast.x && playerLast.y === otherLast.y){
+            //     return false
+            // }
+        }
+        console.log("paths ensured!")
+        return true
     }
 
     update(ctx) {
@@ -216,6 +308,10 @@ class Game {
                     this._grid.removeEntity(pn);
                     this.removeItemOnce(this._pickups, pn)
                     this._level.numPickedUp++;
+                    //spawn new pickup
+                    this.addPickup(this._sketch)
+                    // randomize walls
+                    this.loadRandomWalls()
                 }
             }
         }
