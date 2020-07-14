@@ -173,13 +173,13 @@ class AssetManager {
 }
 
 class StepUpdate {
-    step(ctx, stepCounter){
+    step(ctx, stepCounter) {
     }
 }
 
 class VarCondition {
-    variableName=""
-    conditionType=GameData.COND_EQ
+    variableName = ""
+    conditionType = GameData.COND_EQ
     value = null
 
     constructor(variableName, conditionType, value) {
@@ -188,18 +188,18 @@ class VarCondition {
         this.value = value;
     }
 
-    evaluate(gameCtx){
+    evaluate(gameCtx) {
         let actualValue = gameCtx[this.variableName]
 
-        if (this.conditionType == GameData.COND_EQ){
+        if (this.conditionType == GameData.COND_EQ) {
             return this.value == actualValue
         }
     }
 }
 
-class ConditionInterpreter{
-    parse(conditionObj){
-        if (conditionObj.COND === GameData.COND_EQ){
+class ConditionInterpreter {
+    parse(conditionObj) {
+        if (conditionObj.COND === GameData.COND_EQ) {
             return new VarCondition(
                 conditionObj[GameData.VAR],
                 conditionObj[GameData.COND],

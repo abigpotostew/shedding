@@ -4,7 +4,7 @@ class StepSpawner extends StepUpdate {
     _nextPickupGameTime = 0;
     _game = null;
     _numPickups = 0;
-
+    _lastStepCounter = 0
 
     constructor(spawnRate, game) {
         super();
@@ -12,25 +12,37 @@ class StepSpawner extends StepUpdate {
         this._nextPickupGameTime = spawnRate;
         this._game = game;
         this._numPickups = this._game._level.numPickedUp | 0
+        this.reset(this._game._gameStepCounter)
     }
 
+    // return true if the logic is complete.
     step(ctx, stepCounter) {
         // if number of pickups has changed
         if (this._numPickups != this._game._level.numPickedUp) {
             this.reset(stepCounter)
+            return true
         }
         if (stepCounter == this._nextPickupGameTime) {
             //move it!
             this._game.movePickup()
             this._numPickups = this._game._level.numPickedUp
             this.reset(stepCounter)
+            return true
         }
-        let percentToSpawn = (stepCounter - this._nextPickupGameTime)/this._spawnRate
+        let percentToSpawn = (stepCounter - this._nextPickupGameTime) / this._spawnRate
         this._game.jitterPickup(ctx, percentToSpawn)
+
+        this._lastStepCounter=this._game._gameStepCounter
+        return false
     }
 
     reset(stepCounter) {
         this._nextPickupGameTime = stepCounter + this._spawnRate;
+        this._lastStepCounter=this._game._gameStepCounter
+    }
+
+    remaining(){
+        return this._nextPickupGameTime - this._lastStepCounter
     }
 }
 
@@ -59,8 +71,10 @@ class Game {
 
     _keysPressed = []
 
+    _debugMode = false
 
     _level = {
+        pickupSpawnExpirationStepUpdater: null,
         stepUpdaters: [],
         winCondition: null,//object condition with evaluate func
         numPickedUp: 0,
@@ -96,6 +110,7 @@ class Game {
             stepUpdaters: [],
             winCondition: null,
             numPickedUp: 0,
+            spawnRate:15,
         }
 
         this._gameStepCounter = 0
@@ -129,7 +144,8 @@ class Game {
             }
         }
         if (level.spawnRate && level.spawnRate > 0) {
-            this._level.stepUpdaters.push(new StepSpawner(level.spawnRate, this))
+            this._level.spawnRate = level.spawnRate
+            // this._level.stepUpdaters.push(new StepSpawner(level.spawnRate, this))
         }
 
         if (level.winCondition) {
@@ -137,10 +153,6 @@ class Game {
         }
 
         this.loadRandomWalls()
-        //
-        // let start = this._grid.getCellPosition(this._player)
-        // let end = this._grid.getCellPosition(this._other)
-        // let path = this._grid.store.path(start.x, start.y, end.x, end.y)
     }
 
     loadRandomWalls() {
@@ -167,6 +179,17 @@ class Game {
                 }
             }
         }
+        if (this.renderPaths == null){
+            throw new Error("YO I need the paths for this")
+        }
+
+        let pathLength = 0
+        for (var i=0;i<this.renderPaths.length;i++){
+            pathLength += this.renderPaths[i].path.length
+        }
+        pathLength = Math.max(pathLength+10, this._level.spawnRate)
+
+        this._level.pickupSpawnExpirationStepUpdater = new StepSpawner(pathLength, this)
     }
 
     movePickup() {
@@ -273,11 +296,17 @@ class Game {
             }
             this.pickupNeighbors(ctx)
 
+            // step updaters
             this._gameStepCounter++;
             for (var i = 0; i < this._level.stepUpdaters.length; i++) {
                 let su = this._level.stepUpdaters[i];
                 su.step(ctx, this._gameStepCounter)
             }
+            this._level.pickupSpawnExpirationStepUpdater.step(ctx, this._gameStepCounter)
+            // if (this._level.pickupSpawnExpirationStepUpdater.step(ctx, this._gameStepCounter)){
+            //     Math.max(this._level.spawnRate)
+            //     this._level.pickupSpawnExpirationStepUpdater = new StepSpawner( this._level.spawnRate, this)
+            // }
 
             // update components for each entity
             for (var i = 0; i < this._pickups.length; i++) {
@@ -391,11 +420,16 @@ class Game {
         }
     }
 
+    //todo on focus out remove all keys pressed
     keyReleased(e) {
         this.removeItemAll(this._keysPressed, e.key)
+
+        if (e.key === Game.ACTION_DEBUG_MODE) {
+            this._debugMode = !this._debugMode
+        }
     }
 
-    jitterPickup(ctx, percentToSpawn){
+    jitterPickup(ctx, percentToSpawn) {
         for (var i = 0; i < this._pickups.length; i++) {
             // this.drawEntity(ctx, this._pickups[i]);
         }
@@ -412,24 +446,29 @@ class Game {
             this.drawEntity(ctx, this._pickups[i]);
         }
 
-        //debug draw
-        ctx.sketch.text(ctx.dt, ctx.sketch.width - 45, 10);
-        ctx.sketch.text(this.stateText(), 10, 20)
+        ctx.sketch.text("Score: "+this._numPickupsRunning, 100, 20);
+        ctx.sketch.text(this._level.pickupSpawnExpirationStepUpdater.remaining(), 100, 10);
 
-        if (this.renderPaths && this.renderPaths.length > 0) {
-            for (var i = 0; i < this.renderPaths.length; ++i) {
-                let path = this.renderPaths[i].path
-                let pathColor = this.renderPaths[i].color
-                ctx.sketch.stroke(pathColor)
-                for (var p = 1; p < path.length; ++p) {
-                    let start = this._grid.worldPos(path[p - 1].x, path[p - 1].y)
-                    let end = this._grid.worldPos(path[p].x, path[p].y)
-                    ctx.sketch.line(start.x + i, start.y + i, end.x + i, end.y + i)
+        //debug draw
+        if (this._debugMode) {
+            ctx.sketch.text(ctx.dt, ctx.sketch.width - 45, 10);
+            ctx.sketch.text(this.stateText(), 10, 20)
+
+            if (this.renderPaths && this.renderPaths.length > 0) {
+                for (var i = 0; i < this.renderPaths.length; ++i) {
+                    let path = this.renderPaths[i].path
+                    let pathColor = this.renderPaths[i].color
+                    ctx.sketch.stroke(pathColor)
+                    for (var p = 1; p < path.length; ++p) {
+                        let start = this._grid.worldPos(path[p - 1].x, path[p - 1].y)
+                        let end = this._grid.worldPos(path[p].x, path[p].y)
+                        ctx.sketch.line(start.x + i, start.y + i, end.x + i, end.y + i)
+                    }
                 }
             }
-        }
 
-        this.debugMiddleDot(ctx);
+            this.debugMiddleDot(ctx);
+        }
     }
 
     debugMiddleDot(ctx) {
@@ -500,11 +539,12 @@ Game.ACTION_LEFT = 'a';
 Game.ACTION_RIGHT = 'd';
 Game.ACTION_UP = 'w';
 Game.ACTION_DOWN = 's';
+Game.ACTION_DEBUG_MODE = 'g';
 Game.ACTIONS = {
-    'a': Game.ACTION_LEFT,
-    'd': Game.ACTION_RIGHT,
-    'w': Game.ACTION_UP,
-    's': Game.ACTION_DOWN,
+    [Game.ACTION_LEFT]: Game.ACTION_LEFT,
+    [Game.ACTION_RIGHT]: Game.ACTION_RIGHT,
+    [Game.ACTION_UP]: Game.ACTION_UP,
+    [Game.ACTION_DOWN]: Game.ACTION_DOWN,
 }
 Game.STATE_IDLE = 0;
 Game.STATE_ANIMATING = 1;
