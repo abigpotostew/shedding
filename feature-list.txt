@@ -31,7 +31,10 @@ other
 - [x] javascript
 
 level generation:
-- openNeighbors should implement collision. other cannot pass through a pickup
+- [x] openNeighbors should implement collision. other cannot pass through a pickup
+    - got a workable version without collision using lists
+- the two paths to pickup should not share a direct neighbor
+- spawn rate based on distance to goal from both player and other.
 
 bugs:
 - pickup spawn animation delays to show the grid coloring

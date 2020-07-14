@@ -92,25 +92,31 @@ class EntityStore {
         return true
     }
 
-    openNeighbors(startx, starty, closedTypes) {
+    openNeighbors(startx, starty, closedTypes, allowDiagonalNeighbors) {
         if (!this.inBounds(startx, starty)) {
             return []
         }
         let out = []
-        for (var x = -1; x <= 1; x+=1) {
-            for (var y = -1; y <= 1; y++) {
-                if (x === y || !this.inBounds(x + startx, y + starty)) {
+
+        let cardinalNeighbors = [ [-1, 0], [1, 0], [0, -1], [0, 1] ]
+        let diagonalNeighbors = [ [-1, -1], [1, 1], [1, -1], [-1, 1] ]
+        if (allowDiagonalNeighbors){
+            cardinalNeighbors= cardinalNeighbors.concat(diagonalNeighbors)
+        }
+
+        for (var vi = 0; vi<cardinalNeighbors.length; ++vi){
+            let x = cardinalNeighbors[vi][0]
+            let y = cardinalNeighbors[vi][1]
+                if (!this.inBounds(x + startx, y + starty)) {
                     continue;
                 }
                 let entities = this.findAt(x + startx, y + starty);
                 //todo collisions here rather than type
                 if (entities.length !== 0 && closedTypes) {
                     let isClosed = false
-                    for (var i=0;i<closedTypes.length;++i){
-
-                        // can't move through a wall :)
-                        if (this.numEntityOfType(entities, closedTypes[i]) > 0){
-                            isClosed= true
+                    for (var i = 0; i < closedTypes.length; ++i) {
+                        if (this.numEntityOfType(entities, closedTypes[i]) > 0) {
+                            isClosed = true
                             break;
                         }
                     }
@@ -119,7 +125,7 @@ class EntityStore {
                     }
                 }
                 out.push(new Cell(x + startx, y + starty))
-            }
+
         }
         return out;
     }
