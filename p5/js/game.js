@@ -446,13 +446,13 @@ class Game {
             this.drawEntity(ctx, this._pickups[i]);
         }
 
-        ctx.sketch.text("Score: "+this._numPickupsRunning, 100, 20);
-        ctx.sketch.text(this._level.pickupSpawnExpirationStepUpdater.remaining(), 100, 10);
+        ctx.sketch.text("Score: "+this._numPickupsRunning, 10, 20);
+        ctx.sketch.text(this._level.pickupSpawnExpirationStepUpdater.remaining(), 10, 10);
 
         //debug draw
         if (this._debugMode) {
             ctx.sketch.text(ctx.dt, ctx.sketch.width - 45, 10);
-            ctx.sketch.text(this.stateText(), 10, 20)
+            ctx.sketch.text(this.stateText(), ctx.sketch.width - 45, 20)
 
             if (this.renderPaths && this.renderPaths.length > 0) {
                 for (var i = 0; i < this.renderPaths.length; ++i) {
