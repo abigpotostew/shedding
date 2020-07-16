@@ -91,7 +91,6 @@ class Entity {
     get id() {
         return this.eId;
     }
-
 }
 
 class Physics {

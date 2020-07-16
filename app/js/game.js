@@ -18,11 +18,11 @@ class StepSpawner extends StepUpdate {
     // return true if the logic is complete.
     step(ctx, stepCounter) {
         // if number of pickups has changed
-        if (this._numPickups != this._game._level.numPickedUp) {
+        if (this._numPickups !== this._game._level.numPickedUp) {
             this.reset(stepCounter)
             return true
         }
-        if (stepCounter == this._nextPickupGameTime) {
+        if (stepCounter === this._nextPickupGameTime) {
             //move it!
             this._game.movePickup()
             this._numPickups = this._game._level.numPickedUp
@@ -32,16 +32,16 @@ class StepSpawner extends StepUpdate {
         let percentToSpawn = (stepCounter - this._nextPickupGameTime) / this._spawnRate
         this._game.jitterPickup(ctx, percentToSpawn)
 
-        this._lastStepCounter=this._game._gameStepCounter
+        this._lastStepCounter = this._game._gameStepCounter
         return false
     }
 
     reset(stepCounter) {
         this._nextPickupGameTime = stepCounter + this._spawnRate;
-        this._lastStepCounter=this._game._gameStepCounter
+        this._lastStepCounter = this._game._gameStepCounter
     }
 
-    remaining(){
+    remaining() {
         return this._nextPickupGameTime - this._lastStepCounter
     }
 }
@@ -57,6 +57,7 @@ class Game {
     _other = null;
     _walls = [];
     _pickups = [];
+    _animatingEntities = [];
     _numPickupsRunning = 0;
 
     _nextPickupGameTime = 0;
@@ -110,7 +111,7 @@ class Game {
             stepUpdaters: [],
             winCondition: null,
             numPickedUp: 0,
-            spawnRate:15,
+            spawnRate: 15,
         }
 
         this._gameStepCounter = 0
@@ -179,15 +180,22 @@ class Game {
                 }
             }
         }
-        if (this.renderPaths == null){
-            throw new Error("YO I need the paths for this")
+        if (this.renderPaths == null) {
+            this.ensurePaths()
+            if (this.renderPaths == null) {
+                //probably a bug
+                throw new Error("YO I need the paths for this")
+            }
         }
 
         let pathLength = 0
-        for (var i=0;i<this.renderPaths.length;i++){
+        for (var i = 0; i < this.renderPaths.length; i++) {
+            if (this.renderPaths[i].path == null) {
+                console.log("i's null")
+            }
             pathLength += this.renderPaths[i].path.length
         }
-        pathLength = Math.max(pathLength+10, this._level.spawnRate)
+        pathLength = Math.max(pathLength + 10, this._level.spawnRate)
 
         this._level.pickupSpawnExpirationStepUpdater = new StepSpawner(pathLength, this)
     }
@@ -212,20 +220,21 @@ class Game {
 
         let playerPath = null
         let otherPath = null
-        for (var i = 0; i < this._pickups.length; i++) {
-            let pickup = this._grid.getCellPosition(this._pickups[0])
-            playerPath = this._grid.store.path(player.x, player.y, pickup.x, pickup.y)
+        let grid = this._grid
+        _.each(this._pickups, function (p) {
+            let pickup = grid.getCellPosition(p)
+            playerPath = grid.store.path(player.x, player.y, pickup.x, pickup.y)
             if (playerPath === null) {
                 return false
             }
             let playerLast = playerPath[playerPath.length - 2]
 
-            let pickupNeighbors = this._grid.store.openNeighbors(pickup.x, pickup.y, [GameData.TYPE_WALL, GameData.TYPE_PICKUP], true)
+            let pickupNeighbors = grid.store.openNeighbors(pickup.x, pickup.y, [GameData.TYPE_WALL, GameData.TYPE_PICKUP], true)
             let otherEnsured = false
             for (var j = 0; j < pickupNeighbors.length; ++j) {
                 let nei = pickupNeighbors[j]
                 if (nei.x !== playerLast.x || nei.y !== playerLast.y) {
-                    otherPath = this._grid.store.path(other.x, other.y, nei.x, nei.y)
+                    otherPath = grid.store.path(other.x, other.y, nei.x, nei.y)
                     if (otherPath != null) {
                         otherEnsured = true
                         break;
@@ -236,8 +245,14 @@ class Game {
                 console.log("couldn't find path for other")
                 return false;
             }
-
-
+        })
+        // for (var i = 0; i < this._pickups.length; i++) {
+        //
+        //
+        //
+        // }
+        if (playerPath == null) {
+            console.log("wat")
         }
         console.log("paths ensured!")
         this.renderPaths = [
@@ -331,6 +346,7 @@ class Game {
     }
 
     pickupNeighbors(ctx) {
+        let game = this;
         let pNeighbors = this._grid.findNeighborsEntity(this._player);
         let oNeighbors = this._grid.findNeighborsEntity(this._other);
         if (pNeighbors.length === 0 || oNeighbors.length === 0) {
@@ -344,6 +360,13 @@ class Game {
                     this._grid.removeEntity(pn);
                     this.removeItemOnce(this._pickups, pn)
                     this._level.numPickedUp++;
+
+                    this._animatingEntities.push(pn)
+                    let dest = this._grid.getEntityWorldPos(this._other)
+                    this.lerp(ctx, pn, pn.physics.pos, dest, 1, function () {
+                        game.removeItemOnce(game._animatingEntities, pn)
+                    }, this._nonBlockingAnimations)
+
                     //spawn new pickup
                     this.addPickup(this._sketch)
                     // randomize walls
@@ -429,6 +452,7 @@ class Game {
         }
     }
 
+    //todo
     jitterPickup(ctx, percentToSpawn) {
         for (var i = 0; i < this._pickups.length; i++) {
             // this.drawEntity(ctx, this._pickups[i]);
@@ -445,8 +469,11 @@ class Game {
         for (var i = 0; i < this._pickups.length; i++) {
             this.drawEntity(ctx, this._pickups[i]);
         }
+        for (var i = 0; i < this._animatingEntities.length; i++) {
+            this.drawEntity(ctx, this._animatingEntities[i]);
+        }
 
-        ctx.sketch.text("Score: "+this._numPickupsRunning, 10, 20);
+        ctx.sketch.text("Score: " + this._numPickupsRunning, 10, 20);
         ctx.sketch.text(this._level.pickupSpawnExpirationStepUpdater.remaining(), 10, 10);
 
         //debug draw
@@ -509,6 +536,26 @@ class Game {
         this.lerp(ctx, pickup, startPos, pos, 1.05, function (ctx, e) {
             thisGame._grid.setEntity(cell.x, cell.y, e)
             // console.log("end:",ctx.gameTime)
+        }, this._nonBlockingAnimations)
+
+        this._nextPickupGameTime = this._gameStepCounter + 15
+    }
+
+    removePickupAnimated(ctx, idx) {
+        this._numPickupsRunning++;
+        let imageName = this._pickupImageNames[this._numPickupsRunning % this._pickupImageNames.length];
+        let image = this._config.assetManager.getImage(imageName)
+
+        let startPos = this._other.physics.pos
+        let pickup = EFactory.createPickup(startPos, this._grid.cellSize, image)
+        this._pickups.push(pickup)
+
+        let res = this._grid.randomEmptyCellAndWorldPos(ctx)
+        let cell = res[0]
+        let pos = res[1]
+        let thisGame = this
+        this.lerp(ctx, pickup, startPos, pos, 1.05, function (ctx, e) {
+            thisGame._grid.setEntity(cell.x, cell.y, e)
         }, this._nonBlockingAnimations)
 
         this._nextPickupGameTime = this._gameStepCounter + 15

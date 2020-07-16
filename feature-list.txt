@@ -38,3 +38,8 @@ level generation:
 
 bugs:
 - pickup spawn animation delays to show the grid coloring
+
+
+---
+current random version features:
+- expired pickups give less points instead of deleting

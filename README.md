@@ -3,4 +3,4 @@ shedding game prototype
 
 play here:
 
-https://abigpotostew.github.io/shedding/p5/
+https://abigpotostew.github.io/shedding/app

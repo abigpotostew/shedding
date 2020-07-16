@@ -76,10 +76,6 @@ class EntityStore {
 
     findEntity(entity) {
         return this.lookupByItem[entity.id]
-        // if (cell==null){
-        //     return null
-        // }
-        // return this.items[cell.y*this.sizeY+cell.x][entity.id]
     }
 
     inBounds(x, y) {
@@ -358,10 +354,18 @@ class Grid extends Entity {
 
     getCellPosition(e) {
         if (!this.store.contains(e)) {
-            return [];
+            throw new Error("entity is not in the store "+e.id);
         }
         let cell = this.store.findEntity(e)
         return cell
+    }
+
+    getEntityWorldPos(e) {
+        let c = this.getCellPosition(e)
+        if (c === null) {
+            return null
+        }
+        return this.worldPos(c.x, c.y)
     }
 
     findNeighborsEntity(e) {
@@ -420,11 +424,9 @@ class Grid extends Entity {
                             ctx.sketch.fill(70 + countPickups * 15, 64 + countPickups * 13, 43 + countPickups * 10);
                         }
 
-
                         let pos = egrid.worldPos(x, y);
 
                         ctx.sketch.rect(pos.x, pos.y, egrid.cellSize, egrid.cellSize);
-//                    ctx.app().ellipse(worldPos(x, y).x, worldPos(x, y).y, 2, 2);
                     }
                 }
             }
