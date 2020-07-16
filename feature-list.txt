@@ -30,6 +30,10 @@ visuals
 other
 - [x] javascript
 
+CI
+- github action CI
+   - https://github.com/abigpotostew/shedding/actions/new/JavaScript
+
 level generation:
 - [x] openNeighbors should implement collision. other cannot pass through a pickup
     - got a workable version without collision using lists

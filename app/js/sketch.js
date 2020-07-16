@@ -43,4 +43,4 @@ const s = (sketch) => {
     }
 };
 
-let myp5 = new p5(s);
+let myp5 = new p5(s, "sketchContainer");
